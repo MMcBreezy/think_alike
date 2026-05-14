@@ -43,7 +43,10 @@ export function RevealPhase({
         </p>
       ) : null}
 
-      <ul className="reveal-grid">
+      <ul
+        className={`reveal-grid${isCompetitive ? ' reveal-grid--competitive' : ''}`}
+        style={isCompetitive ? { '--reveal-player-count': sorted.length } : undefined}
+      >
         {sorted.map((p, index) => {
           const roundDelta = roundResult?.roundDeltas?.[p.id] ?? 0;
 
