@@ -65,90 +65,94 @@ export function SetupScreen({ onStart }) {
 
   return (
     <section className="setup card-rise" aria-labelledby="setup-title">
-      <h2 id="setup-title" className="setup-title">
-        Who is playing?
-      </h2>
-      <p className="setup-hint">
-        Choose a mode, then hand one device around for secret picks.
-      </p>
+      <div className="setup-body">
+        <h2 id="setup-title" className="setup-title">
+          Who is playing?
+        </h2>
+        <p className="setup-hint">
+          Choose a mode, then hand one device around for secret picks.
+        </p>
 
-      <div className="setup-mode-grid" role="radiogroup" aria-label="Game mode">
-        <button
-          type="button"
-          className={`setup-mode${isCompetitive ? ' is-active' : ''}`}
-          aria-pressed={isCompetitive}
-          onClick={() => selectMode(GAME_MODES.COMPETITIVE)}
-        >
-          <span className="setup-mode-title">Competitive</span>
-          <span className="setup-mode-copy">3-6 players · first to 20 wins</span>
-        </button>
-        <button
-          type="button"
-          className={`setup-mode${!isCompetitive ? ' is-active' : ''}`}
-          aria-pressed={!isCompetitive}
-          onClick={() => selectMode(GAME_MODES.COOP)}
-        >
-          <span className="setup-mode-title">Co-op</span>
-          <span className="setup-mode-copy">2 players · reach 20 in 10 rounds</span>
-        </button>
-      </div>
-
-      <p className="setup-hint setup-hint--players">
-        {isCompetitive
-          ? `${COMPETITIVE_MIN_PLAYERS}-${COMPETITIVE_MAX_PLAYERS} players on one device.`
-          : 'Exactly 2 players on one device.'}
-      </p>
-
-      <ul className="setup-list">
-        {names.map((name, i) => (
-          <li key={i} className={`setup-row setup-row--color--${i % 6}`}>
-            <label className="setup-label" htmlFor={`player-${i}`}>
-              Player {i + 1}
-            </label>
-            <input
-              id={`player-${i}`}
-              className="setup-input"
-              type="text"
-              inputMode="text"
-              autoComplete="off"
-              autoCapitalize="words"
-              placeholder={`Name ${i + 1}`}
-              value={name}
-              onChange={(e) => setName(i, e.target.value)}
-            />
-          </li>
-        ))}
-      </ul>
-
-      {isCompetitive && (
-        <div className="setup-actions">
+        <div className="setup-mode-grid" role="radiogroup" aria-label="Game mode">
           <button
             type="button"
-            className="btn btn-ghost"
-            onClick={addPlayer}
-            disabled={names.length >= COMPETITIVE_MAX_PLAYERS}
+            className={`setup-mode${isCompetitive ? ' is-active' : ''}`}
+            aria-pressed={isCompetitive}
+            onClick={() => selectMode(GAME_MODES.COMPETITIVE)}
           >
-            Add player
+            <span className="setup-mode-title">Competitive</span>
+            <span className="setup-mode-copy">3-6 players · first to 20 wins</span>
           </button>
           <button
             type="button"
-            className="btn btn-ghost"
-            onClick={removePlayer}
-            disabled={names.length <= COMPETITIVE_MIN_PLAYERS}
+            className={`setup-mode${!isCompetitive ? ' is-active' : ''}`}
+            aria-pressed={!isCompetitive}
+            onClick={() => selectMode(GAME_MODES.COOP)}
           >
-            Remove
+            <span className="setup-mode-title">Co-op</span>
+            <span className="setup-mode-copy">2 players · reach 20 in 10 rounds</span>
           </button>
         </div>
-      )}
 
-      <button
-        type="button"
-        className={`btn btn-primary btn-block setup-start${!isCompetitive ? ' setup-start--coop' : ''}`}
-        onClick={handleStart}
-        disabled={!canStart}
-      >
-        Start game
-      </button>
+        <p className="setup-hint setup-hint--players">
+          {isCompetitive
+            ? `${COMPETITIVE_MIN_PLAYERS}-${COMPETITIVE_MAX_PLAYERS} players on one device.`
+            : 'Exactly 2 players on one device.'}
+        </p>
+
+        <ul className="setup-list">
+          {names.map((name, i) => (
+            <li key={i} className={`setup-row setup-row--color--${i % 6}`}>
+              <label className="setup-label" htmlFor={`player-${i}`}>
+                Player {i + 1}
+              </label>
+              <input
+                id={`player-${i}`}
+                className="setup-input"
+                type="text"
+                inputMode="text"
+                autoComplete="off"
+                autoCapitalize="words"
+                placeholder={`Name ${i + 1}`}
+                value={name}
+                onChange={(e) => setName(i, e.target.value)}
+              />
+            </li>
+          ))}
+        </ul>
+
+        {isCompetitive && (
+          <div className="setup-actions">
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={addPlayer}
+              disabled={names.length >= COMPETITIVE_MAX_PLAYERS}
+            >
+              Add player
+            </button>
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={removePlayer}
+              disabled={names.length <= COMPETITIVE_MIN_PLAYERS}
+            >
+              Remove
+            </button>
+          </div>
+        )}
+      </div>
+
+      <div className="setup-footer">
+        <button
+          type="button"
+          className={`btn btn-primary btn-block setup-start${!isCompetitive ? ' setup-start--coop' : ''}`}
+          onClick={handleStart}
+          disabled={!canStart}
+        >
+          Start game
+        </button>
+      </div>
     </section>
   );
 }

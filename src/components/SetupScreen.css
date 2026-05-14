@@ -2,8 +2,27 @@
   background: var(--bg-elevated);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 1.25rem;
   box-shadow: var(--shadow);
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.setup-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 1.25rem 1.25rem 0.9rem;
+}
+
+.setup-footer {
+  padding: 0.9rem 1.25rem 1.25rem;
+  border-top: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
+  background: linear-gradient(180deg, rgba(26, 34, 45, 0.2), var(--bg-elevated) 40%);
+  box-shadow: 0 -8px 20px rgba(0, 0, 0, 0.14);
 }
 
 .setup-title {
@@ -133,14 +152,14 @@
 .setup-actions {
   display: flex;
   gap: 0.5rem;
-  margin: 1rem 0;
+  margin: 1rem 0 0;
   flex-wrap: wrap;
 }
 
 .setup-start {
-  margin-top: 0.15rem;
+  margin-top: 0;
 }
 
 .setup-start--coop {
-  margin-top: 1.1rem;
+  margin-top: 0;
 }
