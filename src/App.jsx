@@ -311,15 +311,17 @@ export default function App() {
             onQuitToSetup={newGame}
           />
         )}
-        <h1 className="app-title">Think Alike</h1>
-        <p className="app-sub">{appSub}</p>
-        {showRoundBadge && (
-          <span
-            className={`round-badge${chaosRound ? ' round-badge--chaos' : ''}${lightningRound ? ' round-badge--lightning' : ''}`}
-          >
-            {roundBadgeLabel}
-          </span>
-        )}
+        <div className="app-header-copy">
+          <h1 className="app-title">Think Alike</h1>
+          <p className="app-sub">{appSub}</p>
+          {showRoundBadge && (
+            <span
+              className={`round-badge${chaosRound ? ' round-badge--chaos' : ''}${lightningRound ? ' round-badge--lightning' : ''}`}
+            >
+              {roundBadgeLabel}
+            </span>
+          )}
+        </div>
       </header>
 
       {phase === 'setup' && <SetupScreen onStart={startGame} />}
