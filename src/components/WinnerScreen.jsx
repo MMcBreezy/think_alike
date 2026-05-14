@@ -106,6 +106,7 @@ export function WinnerScreen({
                 <div className="winner-history-top">
                   <span className="winner-history-round">
                     Round {entry.round}
+                    {entry.jackpotRound ? ' · Jackpot' : ''}
                     {entry.chaosRound ? ' · Chaos' : ''}
                   </span>
                   <span

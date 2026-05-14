@@ -27,6 +27,11 @@ export const COOP_NEAR_RANGE = 1;
 export const COOP_EXACT_POINTS = 5;
 export const COOP_NEAR_POINTS = 2;
 export const COOP_CLOSE_POINTS = 1;
+export const COOP_FINAL_SYNC_MAX_PICK = 10;
+export const COOP_FINAL_SYNC_NEAR_RANGE = 1;
+export const COOP_FINAL_SYNC_CLOSE_RANGE = 3;
+export const COOP_FINAL_SYNC_NEAR_POINTS = 2;
+export const COOP_FINAL_SYNC_CLOSE_POINTS = 1;
 
 export function isLightningRound(round, gameMode = GAME_MODES.COMPETITIVE) {
   return gameMode === GAME_MODES.COMPETITIVE && round > 0 && round % LIGHTNING_ROUND_EVERY === 0;
@@ -47,4 +52,20 @@ export function maxPickForRound(round, gameMode = GAME_MODES.COMPETITIVE) {
   return gameMode === GAME_MODES.COMPETITIVE
     ? MAX_PICK_COMPETITIVE_NORMAL
     : MAX_PICK_COOP_NORMAL;
+}
+
+export function isCoopFinalSyncJackpotRound(
+  round,
+  gameMode = GAME_MODES.COMPETITIVE,
+  teamScore = 0,
+  winScore = WIN_SCORE
+) {
+  if (gameMode !== GAME_MODES.COOP || round !== MAX_ROUNDS) return false;
+
+  const remainingPoints = Math.max(0, winScore - teamScore);
+  const standardMaxPoints = isChaosRound(round, gameMode)
+    ? COOP_EXACT_POINTS * CHAOS_SCORE_MULTIPLIER
+    : COOP_EXACT_POINTS;
+
+  return remainingPoints > standardMaxPoints;
 }

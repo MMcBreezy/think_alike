@@ -17,6 +17,8 @@ export function InputPhase({
   players,
   currentPlayerIndex,
   maxPick,
+  jackpotRound,
+  jackpotNeeded,
   lightningRound,
   chaosRound,
   onSubmitSecret,
@@ -102,11 +104,13 @@ export function InputPhase({
     );
   }
 
-  const rangeHint = lightningRound
-    ? 'Lightning · 1-10 · exact +5 · within 3 +2 · visible only while you type'
-    : chaosRound
-      ? 'Chaos · 1-20 · double points · visible only while you type'
-      : `1-${maxPick} · visible only while you type`;
+  const rangeHint = jackpotRound
+    ? `Final Sync Jackpot · 1-${maxPick} · exact +${jackpotNeeded} · off by 1 +2 · off by 2-3 +1`
+    : lightningRound
+      ? 'Lightning · 1-10 · exact +5 · within 3 +2 · visible only while you type'
+      : chaosRound
+        ? 'Chaos · 1-20 · double points · visible only while you type'
+        : `1-${maxPick} · visible only while you type`;
 
   return (
     <section
@@ -115,7 +119,11 @@ export function InputPhase({
       data-secret-entry
     >
       <div className="input-phase-top">
-        {lightningRound ? (
+        {jackpotRound ? (
+          <p className="input-jackpot-strip" role="status">
+            Final Sync Jackpot - pick from 1 to {maxPick}. Exact sync wins +{jackpotNeeded}.
+          </p>
+        ) : lightningRound ? (
           <p className="input-lightning-strip" role="status">
             Lightning round - guess the computer&apos;s number from 1 to {maxPick}
           </p>

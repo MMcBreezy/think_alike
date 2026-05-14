@@ -1,11 +1,25 @@
 import { useMemo } from 'react';
-import { GAME_MODES, LIGHTNING_CLOSE_RANGE, LIGHTNING_CLOSE_POINTS, LIGHTNING_EXACT_POINTS, MAX_PICK_CHAOS, MAX_PICK_LIGHTNING } from '../utils/gameRules.js';
+import {
+  COOP_FINAL_SYNC_CLOSE_RANGE,
+  COOP_FINAL_SYNC_CLOSE_POINTS,
+  COOP_FINAL_SYNC_MAX_PICK,
+  COOP_FINAL_SYNC_NEAR_POINTS,
+  COOP_FINAL_SYNC_NEAR_RANGE,
+  GAME_MODES,
+  LIGHTNING_CLOSE_RANGE,
+  LIGHTNING_CLOSE_POINTS,
+  LIGHTNING_EXACT_POINTS,
+  MAX_PICK_CHAOS,
+  MAX_PICK_LIGHTNING,
+} from '../utils/gameRules.js';
 import './RevealPhase.css';
 
 export function RevealPhase({
   players,
   gameMode,
   roundResult,
+  jackpotRound,
+  jackpotNeeded,
   lightningRound,
   chaosRound,
   lightningTarget,
@@ -31,7 +45,14 @@ export function RevealPhase({
       <h2 id="reveal-title" className="reveal-title">
         The reveal
       </h2>
-      {lightningRound ? (
+      {jackpotRound ? (
+        <p className="reveal-chaos-note reveal-jackpot-note">
+          Final Sync Jackpot - picks were 1-
+          {roundResult?.jackpotRange ?? COOP_FINAL_SYNC_MAX_PICK}. Exact sync won +{jackpotNeeded}.
+          Off by {COOP_FINAL_SYNC_NEAR_RANGE} was +{COOP_FINAL_SYNC_NEAR_POINTS}; off by
+          2-{COOP_FINAL_SYNC_CLOSE_RANGE} was +{COOP_FINAL_SYNC_CLOSE_POINTS}.
+        </p>
+      ) : lightningRound ? (
         <p className="reveal-chaos-note reveal-lightning-note">
           Lightning round - target was {lightningTarget ?? roundResult?.lightningTarget ?? '?'}.
           Exact +{LIGHTNING_EXACT_POINTS}, within {LIGHTNING_CLOSE_RANGE} +{LIGHTNING_CLOSE_POINTS}.
@@ -94,13 +115,19 @@ export function RevealPhase({
           <div className="reveal-coop-summary">
             <p
               className={`reveal-callout ${
-                feedback === 'perfect-sync' || feedback === 'close-sync'
+                feedback === 'perfect-sync' ||
+                feedback === 'close-sync' ||
+                feedback === 'jackpot-sync'
                   ? 'reveal-callout-celebrate'
                   : 'reveal-callout-muted'
               }`}
             >
               {feedback === 'perfect-sync' && 'Perfect Sync!'}
               {feedback === 'close-sync' && 'Close Sync!'}
+              {feedback === 'jackpot-sync' && 'Final Sync Jackpot!'}
+              {feedback === 'jackpot-near' && 'So close!'}
+              {feedback === 'jackpot-close' && 'Almost there'}
+              {feedback === 'jackpot-miss' && 'Jackpot missed'}
               {feedback === 'no-sync' && 'No Sync this round'}
             </p>
             <p className={`reveal-team-points ${teamPoints > 0 ? 'is-pos' : 'is-zero'}`}>

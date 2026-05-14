@@ -7,7 +7,17 @@ import { RevealPhase } from './components/RevealPhase.jsx';
 import { WinnerScreen } from './components/WinnerScreen.jsx';
 import { Scoreboard } from './components/Scoreboard.jsx';
 import { TeamScoreboard } from './components/TeamScoreboard.jsx';
-import { GAME_MODES, MAX_PICK_LIGHTNING, MAX_ROUNDS, WIN_SCORE, isChaosRound, isLightningRound, maxPickForRound } from './utils/gameRules.js';
+import {
+  COOP_FINAL_SYNC_MAX_PICK,
+  GAME_MODES,
+  MAX_PICK_LIGHTNING,
+  MAX_ROUNDS,
+  WIN_SCORE,
+  isChaosRound,
+  isCoopFinalSyncJackpotRound,
+  isLightningRound,
+  maxPickForRound,
+} from './utils/gameRules.js';
 import { calculateRoundResults } from './utils/scoring.js';
 
 function createPlayer(name, index, gameMode) {
@@ -61,6 +71,10 @@ function createLightningTarget(round, gameMode) {
 function getCoopFeedbackLabel(feedback) {
   if (feedback === 'perfect-sync') return 'Perfect Sync!';
   if (feedback === 'close-sync') return 'Close Sync!';
+  if (feedback === 'jackpot-sync') return 'Final Sync Jackpot!';
+  if (feedback === 'jackpot-near') return 'So close!';
+  if (feedback === 'jackpot-close') return 'Almost there';
+  if (feedback === 'jackpot-miss') return 'Jackpot missed';
   return 'No Sync this round';
 }
 
@@ -68,6 +82,7 @@ function createCoopRoundHistoryEntry(round, players, roundResult, teamScoreAfter
   return {
     round,
     chaosRound,
+    jackpotRound: Boolean(roundResult.jackpotRound),
     feedback: roundResult.feedback,
     feedbackLabel: getCoopFeedbackLabel(roundResult.feedback),
     teamPoints: roundResult.teamPoints,
@@ -126,7 +141,15 @@ function gameReducer(state, action) {
       if (state.players[playerIndex]?.currentGuess != null) return state;
       const lightningRound = isLightningRound(state.round, state.gameMode);
       const chaosRound = isChaosRound(state.round, state.gameMode);
-      const maxPick = maxPickForRound(state.round, state.gameMode);
+      const coopJackpotRound = isCoopFinalSyncJackpotRound(
+        state.round,
+        state.gameMode,
+        state.teamScore,
+        WIN_SCORE
+      );
+      const maxPick = coopJackpotRound
+        ? COOP_FINAL_SYNC_MAX_PICK
+        : maxPickForRound(state.round, state.gameMode);
       if (!Number.isInteger(value) || value < 1 || value > maxPick) return state;
       const nextPlayers = state.players.map((p, i) =>
         i === playerIndex ? { ...p, currentGuess: value } : p
@@ -140,8 +163,11 @@ function gameReducer(state, action) {
 
       const roundResult = calculateRoundResults(nextPlayers, state.gameMode, {
         chaosRound,
+        jackpotRound: coopJackpotRound,
         lightningRound,
         lightningTarget: state.lightningTarget,
+        teamScore: state.teamScore,
+        winScore: WIN_SCORE,
       });
 
       if (state.gameMode === GAME_MODES.COMPETITIVE) {
@@ -259,7 +285,16 @@ export default function App() {
   const isCompetitive = gameMode === GAME_MODES.COMPETITIVE;
   const lightningRound = isLightningRound(round, gameMode);
   const chaosRound = isChaosRound(round, gameMode);
-  const maxPick = maxPickForRound(round, gameMode);
+  const coopJackpotRound =
+    phase === 'reveal' && gameMode === GAME_MODES.COOP
+      ? Boolean(roundResult?.jackpotRound)
+      : isCoopFinalSyncJackpotRound(round, gameMode, teamScore, WIN_SCORE);
+  const jackpotNeeded = coopJackpotRound
+    ? phase === 'reveal' && roundResult?.jackpotRound
+      ? roundResult.jackpotPoints ?? 0
+      : Math.max(0, WIN_SCORE - teamScore)
+    : 0;
+  const maxPick = coopJackpotRound ? COOP_FINAL_SYNC_MAX_PICK : maxPickForRound(round, gameMode);
 
   const startGame = useCallback(({ gameMode: nextGameMode, names }) => {
     dispatch({ type: 'START', gameMode: nextGameMode, names });
@@ -297,7 +332,7 @@ export default function App() {
     : `Match minds together. Reach ${WIN_SCORE} in ${MAX_ROUNDS} rounds.`;
   const roundBadgeLabel = isCompetitive
     ? `Round ${round}${lightningRound ? ' · Lightning' : chaosRound ? ' · Chaos' : ''}`
-    : `Round ${round} / ${MAX_ROUNDS}${chaosRound ? ' · Chaos' : ''}`;
+    : `Round ${round} / ${MAX_ROUNDS}${coopJackpotRound ? ' · Final Sync Jackpot' : chaosRound ? ' · Chaos' : ''}`;
 
   return (
     <div className={`app${phase === 'input' ? ' app--input-play' : ''}${turnThemeClass}`}>
@@ -336,6 +371,8 @@ export default function App() {
                 teamScore={teamScore}
                 winScore={WIN_SCORE}
                 maxRounds={MAX_ROUNDS}
+                jackpotRound={coopJackpotRound}
+                jackpotNeeded={jackpotNeeded}
                 compact
               />
             )}
@@ -345,6 +382,8 @@ export default function App() {
             players={players}
             currentPlayerIndex={currentPlayerIndex}
             maxPick={maxPick}
+            jackpotRound={coopJackpotRound}
+            jackpotNeeded={jackpotNeeded}
             lightningRound={lightningRound}
             chaosRound={chaosRound}
             onSubmitSecret={handleSecretSubmit}
@@ -363,6 +402,8 @@ export default function App() {
                 teamScore={teamScore}
                 winScore={WIN_SCORE}
                 maxRounds={MAX_ROUNDS}
+                jackpotRound={coopJackpotRound}
+                jackpotNeeded={jackpotNeeded}
                 compact
               />
             )}
@@ -371,6 +412,8 @@ export default function App() {
             players={players}
             gameMode={gameMode}
             roundResult={roundResult}
+            jackpotRound={coopJackpotRound}
+            jackpotNeeded={jackpotNeeded}
             lightningRound={lightningRound}
             chaosRound={chaosRound}
             lightningTarget={lightningTarget}

@@ -63,6 +63,20 @@
   box-shadow: 0 0 18px rgba(124, 140, 255, 0.18);
 }
 
+.input-jackpot-strip {
+  margin: 0;
+  padding: 0.4rem 0.55rem;
+  border-radius: var(--radius-sm);
+  text-align: center;
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.25;
+  color: #f7f2ff;
+  background: linear-gradient(135deg, #7a5cff, #29b9c9);
+  border: 1px solid rgba(122, 92, 255, 0.58);
+  box-shadow: 0 0 20px rgba(64, 192, 207, 0.18);
+}
+
 .input-phase-top {
   flex: 1;
   min-height: 0;

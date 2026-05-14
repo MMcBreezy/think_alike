@@ -3,12 +3,18 @@ import {
   COOP_CLOSE_POINTS,
   COOP_CLOSE_RANGE,
   COOP_EXACT_POINTS,
+  COOP_FINAL_SYNC_CLOSE_POINTS,
+  COOP_FINAL_SYNC_CLOSE_RANGE,
+  COOP_FINAL_SYNC_MAX_PICK,
+  COOP_FINAL_SYNC_NEAR_POINTS,
+  COOP_FINAL_SYNC_NEAR_RANGE,
   COOP_NEAR_POINTS,
   COOP_NEAR_RANGE,
   GAME_MODES,
   LIGHTNING_CLOSE_POINTS,
   LIGHTNING_CLOSE_RANGE,
   LIGHTNING_EXACT_POINTS,
+  WIN_SCORE,
 } from './gameRules.js';
 
 export function calculateMatches(players) {
@@ -111,7 +117,7 @@ export function calculateCompetitiveScore(players, options = {}) {
 }
 
 export function calculateCoopScore(players, options = {}) {
-  const { chaosRound = false } = options;
+  const { chaosRound = false, jackpotRound = false, teamScore = 0, winScore = WIN_SCORE } = options;
   const applyChaosPoints = (basePoints) =>
     chaosRound ? basePoints * CHAOS_SCORE_MULTIPLIER : basePoints;
 
@@ -129,12 +135,63 @@ export function calculateCoopScore(players, options = {}) {
   const secondGuess = secondPlayer.currentGuess;
   const distance = Math.abs(firstGuess - secondGuess);
 
+  if (jackpotRound) {
+    const jackpotPoints = Math.max(0, winScore - teamScore);
+
+    if (distance === 0) {
+      return {
+        mode: GAME_MODES.COOP,
+        teamPoints: jackpotPoints,
+        feedback: 'jackpot-sync',
+        distance,
+        jackpotRound: true,
+        jackpotPoints,
+        jackpotRange: COOP_FINAL_SYNC_MAX_PICK,
+      };
+    }
+
+    if (distance <= COOP_FINAL_SYNC_NEAR_RANGE) {
+      return {
+        mode: GAME_MODES.COOP,
+        teamPoints: COOP_FINAL_SYNC_NEAR_POINTS,
+        feedback: 'jackpot-near',
+        distance,
+        jackpotRound: true,
+        jackpotPoints,
+        jackpotRange: COOP_FINAL_SYNC_MAX_PICK,
+      };
+    }
+
+    if (distance <= COOP_FINAL_SYNC_CLOSE_RANGE) {
+      return {
+        mode: GAME_MODES.COOP,
+        teamPoints: COOP_FINAL_SYNC_CLOSE_POINTS,
+        feedback: 'jackpot-close',
+        distance,
+        jackpotRound: true,
+        jackpotPoints,
+        jackpotRange: COOP_FINAL_SYNC_MAX_PICK,
+      };
+    }
+
+    return {
+      mode: GAME_MODES.COOP,
+      teamPoints: 0,
+      feedback: 'jackpot-miss',
+      distance,
+      jackpotRound: true,
+      jackpotPoints,
+      jackpotRange: COOP_FINAL_SYNC_MAX_PICK,
+    };
+  }
+
   if (distance === 0) {
     return {
       mode: GAME_MODES.COOP,
       teamPoints: applyChaosPoints(COOP_EXACT_POINTS),
       feedback: 'perfect-sync',
       distance,
+      jackpotRound: false,
     };
   }
 
@@ -144,6 +201,7 @@ export function calculateCoopScore(players, options = {}) {
       teamPoints: applyChaosPoints(COOP_NEAR_POINTS),
       feedback: 'close-sync',
       distance,
+      jackpotRound: false,
     };
   }
 
@@ -153,6 +211,7 @@ export function calculateCoopScore(players, options = {}) {
       teamPoints: applyChaosPoints(COOP_CLOSE_POINTS),
       feedback: 'close-sync',
       distance,
+      jackpotRound: false,
     };
   }
 
@@ -161,6 +220,7 @@ export function calculateCoopScore(players, options = {}) {
     teamPoints: 0,
     feedback: 'no-sync',
     distance,
+    jackpotRound: false,
   };
 }
 
