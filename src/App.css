@@ -156,6 +156,26 @@
   align-items: stretch;
 }
 
+.app--setup {
+  height: 100dvh;
+  overflow: hidden;
+  padding-top: max(12px, env(safe-area-inset-top));
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+}
+
+.app--setup .app-header {
+  margin-bottom: 0.75rem;
+}
+
+.app--setup .app-title {
+  font-size: clamp(1.38rem, 4.8vw, 1.7rem);
+}
+
+.app--setup .app-sub {
+  margin-top: 0.2rem;
+  font-size: 0.84rem;
+}
+
 .app-header {
   position: relative;
   margin-bottom: 1.25rem;
@@ -341,5 +361,11 @@
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@media (max-height: 760px) {
+  .app--setup .app-sub {
+    display: none;
   }
 }

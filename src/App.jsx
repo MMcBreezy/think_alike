@@ -335,7 +335,9 @@ export default function App() {
     : `Round ${round} / ${MAX_ROUNDS}${coopJackpotRound ? ' · Final Sync Jackpot' : chaosRound ? ' · Chaos' : ''}`;
 
   return (
-    <div className={`app${phase === 'input' ? ' app--input-play' : ''}${turnThemeClass}`}>
+    <div
+      className={`app${phase === 'setup' ? ' app--setup' : ''}${phase === 'input' ? ' app--input-play' : ''}${turnThemeClass}`}
+    >
       <header
         className={`app-header${phase === 'input' ? ' app-header--tight' : ''}${showGameMenu ? ' app-header--has-menu' : ''}`}
       >
