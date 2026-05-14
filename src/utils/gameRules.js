@@ -1,0 +1,50 @@
+export const GAME_MODES = {
+  COMPETITIVE: 'competitive',
+  COOP: 'coop',
+};
+
+export const WIN_SCORE = 20;
+export const MAX_ROUNDS = 10;
+
+export const COMPETITIVE_MIN_PLAYERS = 3;
+export const COMPETITIVE_MAX_PLAYERS = 6;
+export const COOP_PLAYER_COUNT = 2;
+
+export const COMPETITIVE_CHAOS_ROUND_EVERY = 4;
+export const COOP_CHAOS_ROUND_EVERY = 3;
+export const LIGHTNING_ROUND_EVERY = 6;
+export const MAX_PICK_CHAOS = 20;
+export const MAX_PICK_COMPETITIVE_NORMAL = 50;
+export const MAX_PICK_COOP_NORMAL = 100;
+export const MAX_PICK_LIGHTNING = 10;
+export const CHAOS_SCORE_MULTIPLIER = 2;
+export const LIGHTNING_EXACT_POINTS = 5;
+export const LIGHTNING_CLOSE_RANGE = 3;
+export const LIGHTNING_CLOSE_POINTS = 2;
+
+export const COOP_CLOSE_RANGE = 5;
+export const COOP_NEAR_RANGE = 1;
+export const COOP_EXACT_POINTS = 5;
+export const COOP_NEAR_POINTS = 2;
+export const COOP_CLOSE_POINTS = 1;
+
+export function isLightningRound(round, gameMode = GAME_MODES.COMPETITIVE) {
+  return gameMode === GAME_MODES.COMPETITIVE && round > 0 && round % LIGHTNING_ROUND_EVERY === 0;
+}
+
+export function isChaosRound(round, gameMode = GAME_MODES.COMPETITIVE) {
+  if (round <= 0) return false;
+  if (gameMode === GAME_MODES.COMPETITIVE) {
+    // Lightning rounds replace chaos behavior when both cadences overlap.
+    return !isLightningRound(round, gameMode) && round % COMPETITIVE_CHAOS_ROUND_EVERY === 0;
+  }
+  return round % COOP_CHAOS_ROUND_EVERY === 0;
+}
+
+export function maxPickForRound(round, gameMode = GAME_MODES.COMPETITIVE) {
+  if (isLightningRound(round, gameMode)) return MAX_PICK_LIGHTNING;
+  if (isChaosRound(round, gameMode)) return MAX_PICK_CHAOS;
+  return gameMode === GAME_MODES.COMPETITIVE
+    ? MAX_PICK_COMPETITIVE_NORMAL
+    : MAX_PICK_COOP_NORMAL;
+}

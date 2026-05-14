@@ -1,0 +1,187 @@
+.reveal-phase {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.reveal-title {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.reveal-chaos-note {
+  margin: -0.25rem 0 0.35rem;
+  text-align: center;
+  font-size: 0.88rem;
+  font-weight: 650;
+  color: var(--warning);
+}
+
+.reveal-lightning-note {
+  color: #aebdff;
+}
+
+.reveal-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 55px), 1fr));
+  gap: 0.35rem;
+}
+
+.reveal-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.55rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.05rem;
+  text-align: center;
+  min-width: 0;
+  transition: transform var(--transition), border-color var(--transition);
+  animation: cardPop 0.4s ease backwards;
+}
+
+.reveal-card:nth-child(1) {
+  animation-delay: 0.02s;
+}
+.reveal-card:nth-child(2) {
+  animation-delay: 0.06s;
+}
+.reveal-card:nth-child(3) {
+  animation-delay: 0.1s;
+}
+.reveal-card:nth-child(4) {
+  animation-delay: 0.14s;
+}
+.reveal-card:nth-child(5) {
+  animation-delay: 0.18s;
+}
+.reveal-card:nth-child(6) {
+  animation-delay: 0.22s;
+}
+
+@keyframes cardPop {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.reveal-card-name {
+  font-size: 0.85rem;
+  font-weight: 650;
+  color: var(--turn-accent);
+}
+
+.reveal-card-name--color--0 {
+  --turn-accent: #6ec9ff;
+}
+.reveal-card-name--color--1 {
+  --turn-accent: #f0c14a;
+}
+.reveal-card-name--color--2 {
+  --turn-accent: #c4a8ff;
+}
+.reveal-card-name--color--3 {
+  --turn-accent: #5ee9b8;
+}
+.reveal-card-name--color--4 {
+  --turn-accent: #ff8fab;
+}
+.reveal-card-name--color--5 {
+  --turn-accent: #9ab8ff;
+}
+
+.reveal-card-num {
+  font-size: 1.25rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.reveal-card-delta {
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.reveal-card-delta.is-pos {
+  color: var(--success);
+}
+
+.reveal-card-delta.is-zero {
+  color: var(--text-muted);
+}
+
+.reveal-messages {
+  min-height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.reveal-coop-summary {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.reveal-callout {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 800;
+  text-align: center;
+}
+
+.reveal-callout-muted {
+  color: var(--text-muted);
+}
+
+.reveal-callout-celebrate {
+  color: var(--success);
+  text-shadow: 0 0 24px rgba(74, 222, 128, 0.35);
+  animation: celebrate 0.8s ease;
+}
+
+.reveal-team-points {
+  margin: 0;
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.reveal-team-points.is-pos {
+  color: var(--success);
+}
+
+.reveal-team-points.is-zero {
+  color: var(--text-muted);
+}
+
+@keyframes celebrate {
+  0% {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  40% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.reveal-next {
+  margin-top: auto;
+}

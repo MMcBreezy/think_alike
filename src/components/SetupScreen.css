@@ -1,0 +1,146 @@
+.setup {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  box-shadow: var(--shadow);
+}
+
+.setup-title {
+  margin: 0 0 0.35rem;
+  font-size: 1.2rem;
+  font-weight: 650;
+}
+
+.setup-hint {
+  margin: 0 0 1rem;
+  font-size: 0.88rem;
+  color: var(--text-muted);
+}
+
+.setup-hint--players {
+  margin-top: 0.9rem;
+}
+
+.setup-mode-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.6rem;
+}
+
+.setup-mode {
+  width: 100%;
+  padding: 0.85rem 0.95rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text);
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
+  transition: border-color var(--transition), background var(--transition), transform 0.08s ease;
+}
+
+.setup-mode:active {
+  transform: scale(0.99);
+}
+
+.setup-mode.is-active {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, var(--bg-card));
+  box-shadow: 0 0 0 1px rgba(91, 156, 255, 0.2);
+}
+
+.setup-mode-title {
+  font-size: 0.98rem;
+  font-weight: 700;
+}
+
+.setup-mode-copy {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.setup-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.setup-row {
+  --setup-accent: #6ec9ff;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.setup-row--color--0 {
+  --setup-accent: #6ec9ff;
+}
+
+.setup-row--color--1 {
+  --setup-accent: #f0c14a;
+}
+
+.setup-row--color--2 {
+  --setup-accent: #c4a8ff;
+}
+
+.setup-row--color--3 {
+  --setup-accent: #5ee9b8;
+}
+
+.setup-row--color--4 {
+  --setup-accent: #ff8fab;
+}
+
+.setup-row--color--5 {
+  --setup-accent: #9ab8ff;
+}
+
+.setup-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: color-mix(in srgb, var(--setup-accent) 74%, var(--text));
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.setup-input {
+  width: 100%;
+  padding: 0.85rem 1rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid color-mix(in srgb, var(--setup-accent) 28%, var(--border));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--setup-accent) 8%, var(--bg-card)),
+    var(--bg-card)
+  );
+  color: var(--text);
+  outline: none;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.setup-input:focus {
+  border-color: var(--setup-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--setup-accent) 28%, transparent);
+}
+
+.setup-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin: 1rem 0;
+  flex-wrap: wrap;
+}
+
+.setup-start {
+  margin-top: 0.15rem;
+}
+
+.setup-start--coop {
+  margin-top: 1.1rem;
+}

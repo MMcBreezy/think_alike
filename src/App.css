@@ -1,0 +1,339 @@
+:root {
+  --bg: #0f1419;
+  --bg-elevated: #1a222d;
+  --bg-card: #232d3b;
+  --border: #2e3a4a;
+  --text: #e8eef6;
+  --text-muted: #8b9cb0;
+  --accent: #5b9cff;
+  --accent-dim: #3d6dad;
+  --turn-accent: #6ec9ff;
+  --turn-accent-dim: #3d6dad;
+  --turn-shell: rgba(110, 201, 255, 0.15);
+  --turn-border: rgba(110, 201, 255, 0.3);
+  --turn-glow: rgba(110, 201, 255, 0.22);
+  --success: #4ade80;
+  --warning: #fbbf24;
+  --danger: #f87171;
+  --radius: 14px;
+  --radius-sm: 10px;
+  --shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+  --transition: 0.2s ease;
+}
+
+.app-live-scoreboard {
+  margin-bottom: 0.75rem;
+}
+
+.app-input-flow .app-live-scoreboard {
+  margin-bottom: 0;
+}
+
+.app--input-play {
+  padding-bottom: max(10px, env(safe-area-inset-bottom));
+  background:
+    radial-gradient(circle at 50% 0%, var(--turn-shell), transparent 58%),
+    linear-gradient(180deg, color-mix(in srgb, var(--turn-accent) 4%, transparent), transparent 24%);
+  transition: background var(--transition), box-shadow var(--transition);
+}
+
+.app--turn--0 {
+  --turn-accent: #6ec9ff;
+  --turn-accent-dim: #3d6dad;
+  --turn-shell: rgba(110, 201, 255, 0.16);
+  --turn-border: rgba(110, 201, 255, 0.34);
+  --turn-glow: rgba(110, 201, 255, 0.22);
+  --accent: #6ec9ff;
+  --accent-dim: #3d6dad;
+}
+
+.app--turn--1 {
+  --turn-accent: #f0c14a;
+  --turn-accent-dim: #b98514;
+  --turn-shell: rgba(240, 193, 74, 0.16);
+  --turn-border: rgba(240, 193, 74, 0.34);
+  --turn-glow: rgba(240, 193, 74, 0.22);
+  --accent: #f0c14a;
+  --accent-dim: #b98514;
+}
+
+.app--turn--2 {
+  --turn-accent: #c4a8ff;
+  --turn-accent-dim: #8264d0;
+  --turn-shell: rgba(196, 168, 255, 0.16);
+  --turn-border: rgba(196, 168, 255, 0.34);
+  --turn-glow: rgba(196, 168, 255, 0.22);
+  --accent: #c4a8ff;
+  --accent-dim: #8264d0;
+}
+
+.app--turn--3 {
+  --turn-accent: #5ee9b8;
+  --turn-accent-dim: #239d74;
+  --turn-shell: rgba(94, 233, 184, 0.16);
+  --turn-border: rgba(94, 233, 184, 0.34);
+  --turn-glow: rgba(94, 233, 184, 0.22);
+  --accent: #5ee9b8;
+  --accent-dim: #239d74;
+}
+
+.app--turn--4 {
+  --turn-accent: #ff8fab;
+  --turn-accent-dim: #d84c74;
+  --turn-shell: rgba(255, 143, 171, 0.16);
+  --turn-border: rgba(255, 143, 171, 0.34);
+  --turn-glow: rgba(255, 143, 171, 0.22);
+  --accent: #ff8fab;
+  --accent-dim: #d84c74;
+}
+
+.app--turn--5 {
+  --turn-accent: #9ab8ff;
+  --turn-accent-dim: #577fd4;
+  --turn-shell: rgba(154, 184, 255, 0.16);
+  --turn-border: rgba(154, 184, 255, 0.34);
+  --turn-glow: rgba(154, 184, 255, 0.22);
+  --accent: #9ab8ff;
+  --accent-dim: #577fd4;
+}
+
+.app-input-flow {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  gap: 0.45rem;
+}
+
+.app-header--tight {
+  margin-bottom: 0.5rem;
+}
+
+.app-header--tight .round-badge {
+  margin-top: 0.4rem;
+}
+
+.app--input-play .app-header {
+  padding: 0.8rem 0.85rem 0.7rem;
+  margin: 0 -0.1rem 0.5rem;
+  border-radius: calc(var(--radius) + 2px);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--turn-accent) 14%, rgba(255, 255, 255, 0.02)),
+    transparent 82%
+  );
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--turn-accent) 22%, transparent);
+}
+
+.app--input-play .app-title {
+  color: color-mix(in srgb, var(--turn-accent) 24%, var(--text));
+  text-shadow: 0 0 18px var(--turn-glow);
+}
+
+.app--input-play .app-sub {
+  color: color-mix(in srgb, var(--turn-accent) 42%, var(--text-muted));
+}
+
+@media (max-height: 720px) {
+  .app-header--tight .app-sub {
+    display: none;
+  }
+
+  .app-header--tight {
+    margin-bottom: 0.35rem;
+  }
+}
+
+.app {
+  min-height: 100dvh;
+  width: 100%;
+  max-width: min(440px, 100%);
+  padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right))
+    max(24px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.app-header {
+  position: relative;
+  text-align: center;
+  margin-bottom: 1.25rem;
+  animation: fadeIn var(--transition);
+}
+
+.app-header--has-menu {
+  padding-right: 48px;
+}
+
+.app-title {
+  margin: 0;
+  font-size: clamp(1.5rem, 5vw, 1.85rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.app-sub {
+  margin: 0.35rem 0 0;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.round-badge {
+  display: inline-block;
+  margin-top: 0.75rem;
+  padding: 0.25rem 0.65rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.app--input-play .round-badge:not(.round-badge--chaos):not(.round-badge--lightning) {
+  color: color-mix(in srgb, var(--turn-accent) 62%, var(--text));
+  border-color: color-mix(in srgb, var(--turn-accent) 34%, var(--border));
+  background: color-mix(in srgb, var(--turn-accent) 13%, var(--bg-card));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--turn-accent) 10%, transparent);
+}
+
+.round-badge--chaos {
+  color: var(--warning);
+  border-color: rgba(251, 191, 36, 0.45);
+  background: rgba(251, 191, 36, 0.1);
+}
+
+.round-badge--lightning {
+  color: #c7d2ff;
+  border-color: rgba(124, 140, 255, 0.48);
+  background: rgba(92, 86, 216, 0.18);
+  box-shadow: 0 0 0 1px rgba(124, 140, 255, 0.14);
+}
+
+.card-rise {
+  animation: cardRise 0.35s ease;
+}
+
+@keyframes cardRise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  font-weight: 600;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: background var(--transition), transform 0.1s ease, border-color var(--transition),
+    opacity var(--transition);
+}
+
+.btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: linear-gradient(165deg, var(--accent), var(--accent-dim));
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.app--input-play .btn-primary {
+  box-shadow: 0 12px 24px color-mix(in srgb, var(--turn-accent) 18%, transparent);
+}
+
+.btn-primary:not(:disabled):hover {
+  filter: brightness(1.06);
+}
+
+.btn-ghost {
+  background: var(--bg-card);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+.app--input-play .btn-ghost {
+  background: color-mix(in srgb, var(--turn-accent) 8%, var(--bg-card));
+  border-color: color-mix(in srgb, var(--turn-accent) 28%, var(--border));
+}
+
+.btn-ghost:not(:disabled):hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.app--input-play .btn-ghost:not(:disabled):hover {
+  background: color-mix(in srgb, var(--turn-accent) 14%, var(--bg-elevated));
+}
+
+.btn-block {
+  width: 100%;
+  padding: 1rem 1.25rem;
+  font-size: 1.05rem;
+}
+
+.app--input-play .scoreboard {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--turn-accent) 11%, var(--bg-elevated)),
+    var(--bg-elevated)
+  );
+  border-color: color-mix(in srgb, var(--turn-accent) 32%, var(--border));
+  box-shadow: 0 12px 24px color-mix(in srgb, var(--turn-accent) 10%, rgba(0, 0, 0, 0.18));
+}
+
+.app--input-play .scoreboard-title,
+.app--input-play .scoreboard-fraction,
+.app--input-play .team-scoreboard-note {
+  color: color-mix(in srgb, var(--turn-accent) 40%, var(--text-muted));
+}
+
+.app--input-play .scoreboard-track {
+  border-color: color-mix(in srgb, var(--turn-accent) 26%, var(--border));
+}
+
+.app--input-play .input-pass-card {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--turn-accent) 10%, var(--bg-elevated)),
+    var(--bg-elevated)
+  );
+  border-color: color-mix(in srgb, var(--turn-accent) 30%, var(--border));
+}
+
+.app--input-play .input-pass-title {
+  color: color-mix(in srgb, var(--turn-accent) 28%, var(--text));
+}
+
+.app--input-play .input-pass-sub {
+  color: color-mix(in srgb, var(--turn-accent) 28%, var(--text-muted));
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

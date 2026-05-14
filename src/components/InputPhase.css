@@ -1,0 +1,251 @@
+.input-phase {
+  display: flex;
+  flex-direction: column;
+}
+
+.input-phase--play {
+  flex: 1;
+  min-height: 0;
+  gap: 0;
+  overflow: hidden;
+  --turn-accent: #6ec9ff;
+}
+
+.input-turn--0 {
+  --turn-accent: #6ec9ff;
+}
+.input-turn--1 {
+  --turn-accent: #f0c14a;
+}
+.input-turn--2 {
+  --turn-accent: #c4a8ff;
+}
+.input-turn--3 {
+  --turn-accent: #5ee9b8;
+}
+.input-turn--4 {
+  --turn-accent: #ff8fab;
+}
+.input-turn--5 {
+  --turn-accent: #9ab8ff;
+}
+
+.input-phase--pass {
+  flex: 1;
+  min-height: 0;
+  justify-content: center;
+}
+
+.input-chaos-strip {
+  margin: 0;
+  padding: 0.4rem 0.55rem;
+  border-radius: var(--radius-sm);
+  text-align: center;
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.25;
+  color: #1a1408;
+  background: linear-gradient(135deg, #fde68a, #fbbf24);
+  border: 1px solid rgba(251, 191, 36, 0.65);
+}
+
+.input-lightning-strip {
+  margin: 0;
+  padding: 0.4rem 0.55rem;
+  border-radius: var(--radius-sm);
+  text-align: center;
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.25;
+  color: #eef3ff;
+  background: linear-gradient(135deg, #7c8cff, #5347d8);
+  border: 1px solid rgba(124, 140, 255, 0.65);
+  box-shadow: 0 0 18px rgba(124, 140, 255, 0.18);
+}
+
+.input-phase-top {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.input-phase-bottom {
+  margin-top: auto;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding-top: 0.25rem;
+}
+
+.input-pass-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem 1.25rem;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+
+.input-pass-title {
+  margin: 0 0 0.5rem;
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+
+.input-pass-sub {
+  margin: 0 0 1.25rem;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+
+.input-heading {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--text);
+}
+
+.input-heading-rest {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.input-player-name {
+  color: var(--turn-accent);
+  font-weight: 750;
+  font-size: 1.28em;
+  letter-spacing: -0.01em;
+}
+
+.input-display {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.65rem 0.75rem;
+  text-align: center;
+  min-height: 2.65rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 2px 12px rgba(0, 0, 0, 0.2);
+}
+
+.input-phase--play .input-display {
+  border-color: color-mix(in srgb, var(--turn-accent) 38%, var(--border));
+}
+
+.input-display-value {
+  font-size: 1.65rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+  color: var(--turn-accent);
+}
+
+.input-display-placeholder {
+  font-size: 1.25rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.input-hint {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.input-hint--turn {
+  color: color-mix(in srgb, var(--turn-accent) 40%, var(--text-muted));
+}
+
+.input-error {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--danger);
+  text-align: center;
+}
+
+.keypad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.4rem;
+}
+
+.keypad-key {
+  min-height: 46px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text);
+  font-size: 1.1rem;
+  font-weight: 650;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  transition: background var(--transition), border-color var(--transition), transform 0.08s ease;
+}
+
+.input-phase--play .keypad-key:hover {
+  border-color: var(--turn-accent);
+  background: var(--bg-elevated);
+}
+
+.keypad-key:active {
+  transform: scale(0.96);
+}
+
+.input-phase--play .input-submit.btn-block {
+  padding-top: 0.85rem;
+  padding-bottom: 0.85rem;
+  font-size: 1rem;
+}
+
+@media (min-width: 480px) {
+  .input-heading {
+    font-size: 1.15rem;
+    line-height: 1.35;
+  }
+
+  .input-player-name {
+    font-size: 1.34em;
+  }
+
+  .input-display {
+    padding: 1rem 1rem;
+    min-height: 3.1rem;
+  }
+
+  .input-display-value {
+    font-size: 1.9rem;
+  }
+
+  .input-display-placeholder {
+    font-size: 1.45rem;
+  }
+
+  .input-phase-top {
+    gap: 0.55rem;
+  }
+
+  .keypad {
+    gap: 0.5rem;
+  }
+
+  .keypad-key {
+    min-height: 50px;
+    font-size: 1.2rem;
+  }
+
+  .input-phase--play .input-submit.btn-block {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+    font-size: 1.05rem;
+  }
+}

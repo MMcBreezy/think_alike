@@ -1,0 +1,19 @@
+.team-scoreboard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.team-scoreboard-note {
+  margin: 0;
+  font-size: 0.76rem;
+  color: var(--text-muted);
+}
+
+.scoreboard--compact.team-scoreboard {
+  gap: 0.22rem;
+}
+
+.scoreboard--compact .team-scoreboard-note {
+  font-size: 0.67rem;
+}
