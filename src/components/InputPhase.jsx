@@ -6,6 +6,7 @@ import {
   feedbackSubmit,
   primeAudio,
 } from '../utils/gameFeedback.js';
+import { getPlayerColorIndex } from '../utils/playerColors.js';
 import './InputPhase.css';
 
 function tryAppendDigit(prev, digit, maxLen, maxPick) {
@@ -37,6 +38,7 @@ export function InputPhase({
   jackpotNeeded,
   lightningRound,
   chaosRound,
+  soloVsCpu = false,
   onSubmitSecret,
   onAdvanceAfterPass,
 }) {
@@ -47,9 +49,10 @@ export function InputPhase({
 
   const current = players[currentPlayerIndex];
   const nextPlayer = players[currentPlayerIndex + 1];
-  const isLastPlayer = currentPlayerIndex >= players.length - 1;
+  const isLastPlayer = soloVsCpu || currentPlayerIndex >= players.length - 1;
   const maxLen = useMemo(() => maxDigitsForPick(maxPick), [maxPick]);
-  const nextColorIndex = (currentPlayerIndex + 1) % 6;
+  const currentColorIndex = getPlayerColorIndex(current, players, currentPlayerIndex);
+  const nextColorIndex = getPlayerColorIndex(nextPlayer, players, currentPlayerIndex + 1);
 
   useEffect(() => {
     passBusyRef.current = false;
@@ -69,7 +72,7 @@ export function InputPhase({
       setError('');
       setDraft((prev) => {
         const next = tryAppendDigit(prev, d, maxLen, maxPick);
-        if (next !== prev) feedbackKeyTap(d);
+        if (next !== prev) feedbackKeyTap();
         return next;
       });
     },
@@ -135,7 +138,7 @@ export function InputPhase({
       className={`input-phase-shell${pendingPass ? ' input-phase-shell--pass' : ''}`}
     >
       <section
-        className={`input-phase input-phase--play input-turn--${currentPlayerIndex % 6}${pendingPass ? ' input-phase--inactive' : ''}`}
+        className={`input-phase input-phase--play input-turn--${currentColorIndex}${pendingPass ? ' input-phase--inactive' : ''}`}
         aria-labelledby="input-heading"
         aria-hidden={pendingPass}
         data-secret-entry
@@ -156,7 +159,11 @@ export function InputPhase({
           ) : null}
 
           <h2 id="input-heading" className="input-heading">
-            <span className="input-player-name">{current.name}</span>
+            <span
+              className={`input-player-name input-player-name--color--${currentColorIndex}`}
+            >
+              {current.name}
+            </span>
             <span className="input-heading-rest">, enter your secret number</span>
           </h2>
 

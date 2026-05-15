@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import './AppMenu.css';
-import { GAME_MODES } from '../utils/gameRules.js';
+import { isCoopStyleMode } from '../utils/gameRules.js';
 
 export function AppMenu({
   gameMode,
@@ -35,10 +35,9 @@ export function AppMenu({
   }, [open, close]);
 
   const handleReset = useCallback(() => {
-    const resetCopy =
-      gameMode === GAME_MODES.COOP
-        ? 'Reset this match? Team score returns to 0, round restarts at 1, and you go back to secret picks with the same players.'
-        : 'Reset this match? Scores return to 0, round restarts at 1, and you go back to secret picks with the same players.';
+    const resetCopy = isCoopStyleMode(gameMode)
+      ? 'Reset this match? Team score returns to 0, round restarts at 1, and you go back to secret picks with the same players.'
+      : 'Reset this match? Scores return to 0, round restarts at 1, and you go back to secret picks with the same players.';
 
     if (
       !window.confirm(resetCopy)

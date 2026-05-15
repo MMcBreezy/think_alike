@@ -4,7 +4,9 @@ import {
   COMPETITIVE_MAX_PLAYERS,
   COMPETITIVE_MIN_PLAYERS,
   COOP_PLAYER_COUNT,
+  CPU_PLAYER_NAME,
   GAME_MODES,
+  isCoopStyleMode,
 } from '../utils/gameRules.js';
 
 function normalizeNamesForMode(names, gameMode) {
@@ -24,8 +26,10 @@ export function SetupScreen({ onStart }) {
   const [names, setNames] = useState(() =>
     Array.from({ length: COMPETITIVE_MIN_PLAYERS }, () => '')
   );
+  const [player2IsCpu, setPlayer2IsCpu] = useState(false);
 
   const isCompetitive = gameMode === GAME_MODES.COMPETITIVE;
+  const isCoop = gameMode === GAME_MODES.COOP;
   const minPlayers = isCompetitive ? COMPETITIVE_MIN_PLAYERS : COOP_PLAYER_COUNT;
   const maxPlayers = isCompetitive ? COMPETITIVE_MAX_PLAYERS : COOP_PLAYER_COUNT;
 
@@ -49,19 +53,46 @@ export function SetupScreen({ onStart }) {
     );
   }, []);
 
+  const togglePlayer2Cpu = useCallback(() => {
+    setPlayer2IsCpu((on) => {
+      const next = !on;
+      if (next) {
+        setNames((prev) => {
+          const nextNames = [...prev];
+          nextNames[1] = '';
+          return nextNames;
+        });
+      }
+      return next;
+    });
+  }, []);
+
   const handleStart = useCallback(() => {
     const trimmed = names.map((n) => n.trim()).filter(Boolean);
+    if (isCoop && player2IsCpu) {
+      const playerOne = names[0]?.trim();
+      if (!playerOne) return;
+      onStart({ gameMode, names: [playerOne], player2IsCpu: true });
+      return;
+    }
     if (trimmed.length < minPlayers || trimmed.length > maxPlayers) return;
-    onStart({ gameMode, names: trimmed });
-  }, [gameMode, maxPlayers, minPlayers, names, onStart]);
+    onStart({ gameMode, names: trimmed, player2IsCpu: false });
+  }, [gameMode, isCoop, maxPlayers, minPlayers, names, onStart, player2IsCpu]);
 
   const selectMode = useCallback((nextMode) => {
     setGameMode(nextMode);
+    if (nextMode !== GAME_MODES.COOP) {
+      setPlayer2IsCpu(false);
+    }
     setNames((prev) => normalizeNamesForMode(prev, nextMode));
   }, []);
 
-  const filledNames = names.map((n) => n.trim()).filter(Boolean).length;
-  const canStart = filledNames >= minPlayers && filledNames <= maxPlayers;
+  const filledCount = names.map((n) => n.trim()).filter(Boolean).length;
+  const playerOneFilled = Boolean(names[0]?.trim());
+  const playerTwoFilled = Boolean(names[1]?.trim());
+  const canStart = isCompetitive
+    ? filledCount >= minPlayers && filledCount <= maxPlayers
+    : playerOneFilled && (player2IsCpu || playerTwoFilled);
 
   return (
     <section className="setup card-rise" aria-labelledby="setup-title">
@@ -85,8 +116,8 @@ export function SetupScreen({ onStart }) {
           </button>
           <button
             type="button"
-            className={`setup-mode${!isCompetitive ? ' is-active' : ''}`}
-            aria-pressed={!isCompetitive}
+            className={`setup-mode${isCoop ? ' is-active' : ''}`}
+            aria-pressed={isCoop}
             onClick={() => selectMode(GAME_MODES.COOP)}
           >
             <span className="setup-mode-title">Co-op</span>
@@ -97,26 +128,63 @@ export function SetupScreen({ onStart }) {
         <p className="setup-hint setup-hint--players">
           {isCompetitive
             ? `${COMPETITIVE_MIN_PLAYERS}-${COMPETITIVE_MAX_PLAYERS} players on one device.`
-            : 'Exactly 2 players on one device.'}
+            : 'Two players on one device — or toggle Player 2 to CPU for solo co-op.'}
         </p>
 
         <ul className="setup-list">
           {names.map((name, i) => (
             <li key={i} className={`setup-row setup-row--color--${i % 6}`}>
-              <label className="setup-label" htmlFor={`player-${i}`}>
-                Player {i + 1}
-              </label>
-              <input
-                id={`player-${i}`}
-                className="setup-input"
-                type="text"
-                inputMode="text"
-                autoComplete="off"
-                autoCapitalize="words"
-                placeholder={`Name ${i + 1}`}
-                value={name}
-                onChange={(e) => setName(i, e.target.value)}
-              />
+              {isCoop && i === 1 ? (
+                <>
+                  <div className="setup-row-header">
+                    <label className="setup-label" htmlFor={player2IsCpu ? undefined : 'player-1'}>
+                      Player 2
+                    </label>
+                    <button
+                      type="button"
+                      className={`setup-cpu-toggle${player2IsCpu ? ' is-active' : ''}`}
+                      role="switch"
+                      aria-checked={player2IsCpu}
+                      aria-label={`Player 2: ${player2IsCpu ? CPU_PLAYER_NAME : 'human partner'}`}
+                      onClick={togglePlayer2Cpu}
+                    >
+                      {CPU_PLAYER_NAME}
+                    </button>
+                  </div>
+                  {player2IsCpu ? (
+                    <p className="setup-cpu-note">CPU picks automatically each round.</p>
+                  ) : (
+                    <input
+                      id="player-1"
+                      className="setup-input"
+                      type="text"
+                      inputMode="text"
+                      autoComplete="off"
+                      autoCapitalize="words"
+                      placeholder="Name 2"
+                      value={name}
+                      onChange={(e) => setName(i, e.target.value)}
+                    />
+                  )}
+                </>
+              ) : (
+                <>
+                  <label className="setup-label" htmlFor={`player-${i}`}>
+                    Player {i + 1}
+                  </label>
+                  <input
+                    id={`player-${i}`}
+                    className="setup-input"
+                    type="text"
+                    inputMode="text"
+                    autoComplete="off"
+                    autoCapitalize="words"
+                    placeholder={`Name ${i + 1}`}
+                    value={name}
+                    onChange={(e) => setName(i, e.target.value)}
+                  />
+                </>
+              )}
             </li>
           ))}
         </ul>
@@ -146,7 +214,7 @@ export function SetupScreen({ onStart }) {
       <div className="setup-footer">
         <button
           type="button"
-          className={`btn btn-primary btn-block setup-start${!isCompetitive ? ' setup-start--coop' : ''}`}
+          className={`btn btn-primary btn-block setup-start${isCoopStyleMode(gameMode) ? ' setup-start--coop' : ''}`}
           onClick={handleStart}
           disabled={!canStart}
         >

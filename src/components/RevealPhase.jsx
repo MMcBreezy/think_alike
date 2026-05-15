@@ -20,6 +20,7 @@ import {
   isNumberMatchFeedback,
 } from '../utils/gameFeedback.js';
 import { usePrefersReducedMotion } from '../utils/usePrefersReducedMotion.js';
+import { getPlayerColorIndex } from '../utils/playerColors.js';
 import './RevealPhase.css';
 
 const REVEAL_STEP_MS = 380;
@@ -39,12 +40,11 @@ export function RevealPhase({
   onCardsRevealed,
 }) {
   const reducedMotion = usePrefersReducedMotion();
-  const sorted = useMemo(
+  const displayPlayers = useMemo(
     () =>
-      [...players].sort((a, b) => {
-        if (a.currentGuess !== b.currentGuess) return a.currentGuess - b.currentGuess;
-        return a.name.localeCompare(b.name);
-      }),
+      [...players].sort(
+        (a, b) => getPlayerColorIndex(a, players) - getPlayerColorIndex(b, players),
+      ),
     [players],
   );
 
@@ -52,25 +52,25 @@ export function RevealPhase({
   const feedback = roundResult?.feedback ?? null;
   const teamPoints = roundResult?.teamPoints ?? 0;
   const revealKey = useMemo(
-    () => sorted.map((player) => `${player.id}:${player.currentGuess}`).join('|'),
-    [sorted],
+    () => displayPlayers.map((player) => `${player.id}:${player.currentGuess}`).join('|'),
+    [displayPlayers],
   );
 
   const [revealedCount, setRevealedCount] = useState(() =>
-    reducedMotion ? sorted.length : 0,
+    reducedMotion ? displayPlayers.length : 0,
   );
   const [showCallout, setShowCallout] = useState(reducedMotion);
 
-  const revealComplete = revealedCount >= sorted.length && showCallout;
+  const revealComplete = revealedCount >= displayPlayers.length && showCallout;
 
   const skipReveal = useCallback(() => {
-    setRevealedCount(sorted.length);
+    setRevealedCount(displayPlayers.length);
     setShowCallout(true);
-  }, [sorted.length]);
+  }, [displayPlayers.length]);
 
   useEffect(() => {
     if (reducedMotion) {
-      setRevealedCount(sorted.length);
+      setRevealedCount(displayPlayers.length);
       setShowCallout(true);
       return undefined;
     }
@@ -78,7 +78,7 @@ export function RevealPhase({
     setRevealedCount(0);
     setShowCallout(false);
 
-    if (sorted.length === 0) {
+    if (displayPlayers.length === 0) {
       const calloutTimer = window.setTimeout(() => setShowCallout(true), CALLOUT_DELAY_MS);
       return () => clearTimeout(calloutTimer);
     }
@@ -88,7 +88,7 @@ export function RevealPhase({
     const cardTimer = window.setInterval(() => {
       cardIndex += 1;
       setRevealedCount(cardIndex);
-      if (cardIndex >= sorted.length) {
+      if (cardIndex >= displayPlayers.length) {
         window.clearInterval(cardTimer);
         calloutTimer = window.setTimeout(() => setShowCallout(true), CALLOUT_DELAY_MS);
       }
@@ -98,9 +98,9 @@ export function RevealPhase({
       window.clearInterval(cardTimer);
       if (calloutTimer) window.clearTimeout(calloutTimer);
     };
-  }, [revealKey, sorted.length, reducedMotion]);
+  }, [revealKey, displayPlayers.length, reducedMotion]);
 
-  const cardsRevealed = revealedCount >= sorted.length;
+  const cardsRevealed = revealedCount >= displayPlayers.length;
 
   useEffect(() => {
     if (cardsRevealed) onCardsRevealed?.();
@@ -230,10 +230,11 @@ export function RevealPhase({
 
       <ul
         className={`reveal-grid${isCompetitive ? ' reveal-grid--competitive' : ''}`}
-        style={isCompetitive ? { '--reveal-player-count': sorted.length } : undefined}
+        style={isCompetitive ? { '--reveal-player-count': displayPlayers.length } : undefined}
       >
-        {sorted.map((p, index) => {
+        {displayPlayers.map((p, index) => {
           const isRevealed = index < revealedCount;
+          const colorIndex = getPlayerColorIndex(p, players);
           const roundDelta = roundResult?.roundDeltas?.[p.id] ?? 0;
           const lightningTargetValue =
             lightningTarget ?? roundResult?.lightningTarget ?? null;
@@ -254,7 +255,7 @@ export function RevealPhase({
               className={`reveal-card${isRevealed ? ' reveal-card--revealed' : ''}`}
             >
               <span
-                className={`reveal-card-name reveal-card-name--color--${index % 6}`}
+                className={`reveal-card-name reveal-card-name--color--${colorIndex}`}
               >
                 {p.name}
               </span>

@@ -51,7 +51,6 @@
 .input-phase-shell .input-phase--play {
   gap: 0;
   overflow: hidden;
-  --turn-accent: #6ec9ff;
 }
 
 .input-phase--play {
@@ -59,25 +58,55 @@
   min-height: 0;
   gap: 0;
   overflow: hidden;
-  --turn-accent: #6ec9ff;
 }
 
-.input-turn--0 {
+.input-phase-shell .input-phase--play.input-turn--0,
+.input-phase--play.input-turn--0 {
   --turn-accent: #6ec9ff;
 }
-.input-turn--1 {
+.input-phase-shell .input-phase--play.input-turn--1,
+.input-phase--play.input-turn--1 {
   --turn-accent: #f0c14a;
 }
-.input-turn--2 {
+.input-phase-shell .input-phase--play.input-turn--2,
+.input-phase--play.input-turn--2 {
   --turn-accent: #c4a8ff;
 }
-.input-turn--3 {
+.input-phase-shell .input-phase--play.input-turn--3,
+.input-phase--play.input-turn--3 {
   --turn-accent: #5ee9b8;
 }
-.input-turn--4 {
+.input-phase-shell .input-phase--play.input-turn--4,
+.input-phase--play.input-turn--4 {
   --turn-accent: #ff8fab;
 }
-.input-turn--5 {
+.input-phase-shell .input-phase--play.input-turn--5,
+.input-phase--play.input-turn--5 {
+  --turn-accent: #9ab8ff;
+}
+
+.input-phase-shell .input-phase--pass.input-turn--0,
+.input-phase--pass.input-turn--0 {
+  --turn-accent: #6ec9ff;
+}
+.input-phase-shell .input-phase--pass.input-turn--1,
+.input-phase--pass.input-turn--1 {
+  --turn-accent: #f0c14a;
+}
+.input-phase-shell .input-phase--pass.input-turn--2,
+.input-phase--pass.input-turn--2 {
+  --turn-accent: #c4a8ff;
+}
+.input-phase-shell .input-phase--pass.input-turn--3,
+.input-phase--pass.input-turn--3 {
+  --turn-accent: #5ee9b8;
+}
+.input-phase-shell .input-phase--pass.input-turn--4,
+.input-phase--pass.input-turn--4 {
+  --turn-accent: #ff8fab;
+}
+.input-phase-shell .input-phase--pass.input-turn--5,
+.input-phase--pass.input-turn--5 {
   --turn-accent: #9ab8ff;
 }
 
@@ -211,10 +240,28 @@
 }
 
 .input-player-name {
-  color: var(--turn-accent);
   font-weight: 750;
   font-size: 1.28em;
   letter-spacing: -0.01em;
+}
+
+.input-player-name--color--0 {
+  color: #6ec9ff;
+}
+.input-player-name--color--1 {
+  color: #f0c14a;
+}
+.input-player-name--color--2 {
+  color: #c4a8ff;
+}
+.input-player-name--color--3 {
+  color: #5ee9b8;
+}
+.input-player-name--color--4 {
+  color: #ff8fab;
+}
+.input-player-name--color--5 {
+  color: #9ab8ff;
 }
 
 .input-display {

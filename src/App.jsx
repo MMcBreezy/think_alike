@@ -10,12 +10,14 @@ import { TeamScoreboard } from './components/TeamScoreboard.jsx';
 import {
   bountyMaxPickForMode,
   COOP_FINAL_SYNC_MAX_PICK,
+  CPU_PLAYER_NAME,
   GAME_MODES,
   MAX_PICK_LIGHTNING,
   MAX_ROUNDS,
   WIN_SCORE,
   isChaosRound,
   isCoopFinalSyncJackpotRound,
+  isCoopStyleMode,
   isLightningRound,
   maxPickForRound,
 } from './utils/gameRules.js';
@@ -26,12 +28,15 @@ import {
   previewKeyTapSound,
   setSoundVolumePercent,
 } from './utils/gameFeedback.js';
+import { colorIndexForSeat, getPlayerColorIndex } from './utils/playerColors.js';
 
-function createPlayer(name, index, gameMode) {
+function createPlayer(name, index, gameMode, isCpu = false) {
   const basePlayer = {
     id: `p-${index}-${typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${index}`}`,
     name: name.trim(),
     currentGuess: null,
+    colorIndex: colorIndexForSeat(index),
+    ...(isCpu ? { isCpu: true } : {}),
   };
 
   if (gameMode === GAME_MODES.COMPETITIVE) {
@@ -62,6 +67,8 @@ function resetPlayersForReplay(players, gameMode) {
       id: player.id,
       name: player.name,
       currentGuess: null,
+      colorIndex: player.colorIndex,
+      ...(player.isCpu ? { isCpu: true } : {}),
     };
   });
 }
@@ -113,6 +120,7 @@ function createCoopRoundHistoryEntry(round, players, roundResult, teamScoreAfter
 
 const initialState = {
   gameMode: GAME_MODES.COMPETITIVE,
+  player2IsCpu: false,
   players: [],
   teamScore: 0,
   roundHistory: [],
@@ -131,12 +139,20 @@ const initialState = {
 function gameReducer(state, action) {
   switch (action.type) {
     case 'START': {
-      const { gameMode } = action;
-      const names = action.names.filter(Boolean);
-      const players = names.map((name, index) => createPlayer(name, index, gameMode));
+      const { gameMode, player2IsCpu = false } = action;
+      let names = action.names.filter(Boolean);
+      const resolvedPlayer2IsCpu =
+        gameMode === GAME_MODES.COOP && player2IsCpu;
+      if (resolvedPlayer2IsCpu) {
+        names = [names[0] ?? 'Player', CPU_PLAYER_NAME];
+      }
+      const players = names.map((name, index) =>
+        createPlayer(name, index, gameMode, resolvedPlayer2IsCpu && index === 1)
+      );
       return {
         ...initialState,
         gameMode,
+        player2IsCpu: resolvedPlayer2IsCpu,
         players,
         teamScore: 0,
         roundHistory: [],
@@ -173,10 +189,20 @@ function gameReducer(state, action) {
         ? COOP_FINAL_SYNC_MAX_PICK
         : maxPickForRound(state.round, state.gameMode);
       if (!Number.isInteger(value) || value < 1 || value > maxPick) return state;
-      const nextPlayers = state.players.map((p, i) =>
+      let nextPlayers = state.players.map((p, i) =>
         i === playerIndex ? { ...p, currentGuess: value } : p
       );
-      if (playerIndex < state.players.length - 1) {
+      if (
+        state.player2IsCpu &&
+        playerIndex === 0 &&
+        state.players.length > 1 &&
+        nextPlayers[1]?.currentGuess == null
+      ) {
+        const cpuGuess = randomIntInclusive(1, maxPick);
+        nextPlayers = nextPlayers.map((p, i) =>
+          i === 1 ? { ...p, currentGuess: cpuGuess } : p
+        );
+      } else if (playerIndex < state.players.length - 1) {
         return {
           ...state,
           players: nextPlayers,
@@ -261,7 +287,7 @@ function gameReducer(state, action) {
     case 'NEXT_ROUND': {
       if (state.phase !== 'reveal') return state;
 
-      if (state.gameMode === GAME_MODES.COOP && state.pendingFinalOutcome) {
+      if (isCoopStyleMode(state.gameMode) && state.pendingFinalOutcome) {
         return {
           ...state,
           players: clearGuesses(state.players),
@@ -329,15 +355,17 @@ export default function App() {
     winnerIds,
     roundResult,
     pendingFinalOutcome,
+    player2IsCpu,
   } = state;
 
   const isCompetitive = gameMode === GAME_MODES.COMPETITIVE;
+  const isTeamMode = isCoopStyleMode(gameMode);
   const bountyActive = !bountyClaimed && Number.isInteger(bountyNumber);
   const bountyMaxPick = bountyMaxPickForMode(gameMode);
   const lightningRound = isLightningRound(round, gameMode);
   const chaosRound = isChaosRound(round, gameMode);
   const coopJackpotRound =
-    phase === 'reveal' && gameMode === GAME_MODES.COOP
+    phase === 'reveal' && isTeamMode
       ? Boolean(roundResult?.jackpotRound)
       : isCoopFinalSyncJackpotRound(round, gameMode, teamScore, WIN_SCORE);
   const jackpotNeeded = coopJackpotRound
@@ -347,8 +375,13 @@ export default function App() {
     : 0;
   const maxPick = coopJackpotRound ? COOP_FINAL_SYNC_MAX_PICK : maxPickForRound(round, gameMode);
 
-  const startGame = useCallback(({ gameMode: nextGameMode, names }) => {
-    dispatch({ type: 'START', gameMode: nextGameMode, names });
+  const startGame = useCallback(({ gameMode: nextGameMode, names, player2IsCpu: nextPlayer2IsCpu }) => {
+    dispatch({
+      type: 'START',
+      gameMode: nextGameMode,
+      names,
+      player2IsCpu: nextPlayer2IsCpu,
+    });
   }, []);
 
   const handleSecretSubmit = useCallback((playerIndex, value) => {
@@ -403,7 +436,7 @@ export default function App() {
   const competitiveWinners = winners.map((player) => ({
     id: player.id,
     name: player.name,
-    colorIndex: players.findIndex((p) => p.id === player.id) % 6,
+    colorIndex: getPlayerColorIndex(player, players),
   }));
   const winnerThemeIndex =
     competitiveWinners.length === 1 ? competitiveWinners[0].colorIndex : -1;
@@ -420,11 +453,15 @@ export default function App() {
     const timer = window.setTimeout(() => setBadgePulse(false), 1400);
     return () => clearTimeout(timer);
   }, [round, isSpecialRound, showRoundBadge]);
+  const activeTurnColorIndex =
+    players[currentPlayerIndex] != null
+      ? getPlayerColorIndex(players[currentPlayerIndex], players, currentPlayerIndex)
+      : 0;
   const turnThemeClass =
     phase === 'input' && players.length > 0
-      ? ` app--turn--${currentPlayerIndex % 6}`
+      ? ` app--turn--${activeTurnColorIndex}`
       : phase === 'winner' && isCompetitive && winnerThemeIndex >= 0
-        ? ` app--turn--${winnerThemeIndex % 6}`
+        ? ` app--turn--${winnerThemeIndex}`
         : '';
   const appSub = 'Great minds think alike';
   const roundBadgeLabel = isCompetitive
@@ -468,7 +505,7 @@ export default function App() {
       {phase === 'input' && players.length > 0 && (
         <div className="app-input-flow">
           <div className="app-live-scoreboard">
-            {isCompetitive ? (
+            {!isTeamMode ? (
               <Scoreboard
                 players={players}
                 winScore={WIN_SCORE}
@@ -507,6 +544,7 @@ export default function App() {
             jackpotNeeded={jackpotNeeded}
             lightningRound={lightningRound}
             chaosRound={chaosRound}
+            soloVsCpu={player2IsCpu}
             onSubmitSecret={handleSecretSubmit}
             onAdvanceAfterPass={advanceAfterPass}
           />
@@ -516,7 +554,7 @@ export default function App() {
       {phase === 'reveal' && players.length > 0 && (
         <>
           <div className="app-live-scoreboard">
-            {isCompetitive ? (
+            {!isTeamMode ? (
               <Scoreboard
                 players={players}
                 winScore={WIN_SCORE}
@@ -603,8 +641,12 @@ export default function App() {
         ) : (
           <WinnerScreen
             variant="win"
-            headline="Perfect teamwork!"
-            subtitle={`You reached ${teamScore} / ${WIN_SCORE} in ${round} rounds.`}
+            headline={player2IsCpu ? 'You beat the odds!' : 'Perfect teamwork!'}
+            subtitle={
+              player2IsCpu
+                ? `You and ${CPU_PLAYER_NAME} reached ${teamScore} / ${WIN_SCORE} in ${round} rounds.`
+                : `You reached ${teamScore} / ${WIN_SCORE} in ${round} rounds.`
+            }
             roundHistory={roundHistory}
             onPlayAgain={playAgain}
             onNewGame={newGame}

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { BOUNTY_MAX_PICK, BOUNTY_POINTS } from '../utils/gameRules.js';
 import { useCountUp } from '../utils/useCountUp.js';
+import { getPlayerColorIndex } from '../utils/playerColors.js';
 import './Scoreboard.css';
 
 export function BountyTestHint({ bountyNumber, showBountyForTesting = false }) {
@@ -13,16 +14,11 @@ export function BountyTestHint({ bountyNumber, showBountyForTesting = false }) {
   );
 }
 
-function playerColorIndex(players, playerId, fallbackIndex = 0) {
-  const index = players.findIndex((player) => player.id === playerId);
-  return (index >= 0 ? index : fallbackIndex) % 6;
-}
-
 export function BountyClaimants({ claimants, players }) {
   if (!claimants.length) return null;
 
   return claimants.map((claimant, index) => {
-    const colorIndex = playerColorIndex(players, claimant.id, index);
+    const colorIndex = getPlayerColorIndex(claimant, players, index);
     const separator =
       index === 0
         ? null
@@ -162,7 +158,7 @@ export function Scoreboard({
       {bountyNote}
       <ul className="scoreboard-list">
         {players.map((p) => {
-          const colorIndex = playerColorIndex(players, p.id);
+          const colorIndex = getPlayerColorIndex(p, players);
           const roundDelta = roundDeltas?.[p.id] ?? 0;
           return (
             <ScoreboardRow

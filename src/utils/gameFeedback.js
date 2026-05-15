@@ -90,25 +90,14 @@ export function vibrate(pattern) {
   }
 }
 
-const DIGIT_FREQUENCIES = {
-  0: 440,
-  1: 523.25,
-  2: 587.33,
-  3: 659.25,
-  4: 783.99,
-  5: 880,
-  6: 1046.5,
-  7: 1174.66,
-  8: 1318.51,
-  9: 1567.98,
-};
+const DIGIT_KEY_FREQUENCY = 659.25;
 
-export async function playDigitSound(digit = '5') {
+export async function playDigitSound() {
   if (!isSoundAudible()) return;
   const ctx = await getAudioContext();
   if (!ctx) return;
 
-  const frequency = DIGIT_FREQUENCIES[digit] ?? DIGIT_FREQUENCIES[5];
+  const frequency = DIGIT_KEY_FREQUENCY;
   const now = ctx.currentTime;
 
   connectTone(ctx, {
@@ -333,9 +322,9 @@ export function feedbackBountyClaim() {
   void playBountyClaimSound();
 }
 
-export function feedbackKeyTap(digit = '5') {
+export function feedbackKeyTap() {
   vibrate(5);
-  void playDigitSound(digit);
+  void playDigitSound();
 }
 
 export function feedbackBackspace() {
@@ -364,5 +353,5 @@ export async function primeAudio() {
 
 export async function previewKeyTapSound() {
   await primeAudio();
-  await playDigitSound('5');
+  await playDigitSound();
 }

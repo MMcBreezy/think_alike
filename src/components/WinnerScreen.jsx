@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { Confetti } from './Confetti.jsx';
+import { getPlayerColorIndex } from '../utils/playerColors.js';
 import './WinnerScreen.css';
 
 function WinnerNames({ winners }) {
@@ -83,6 +84,7 @@ export function WinnerScreen({
       return {
         id: player.id,
         name: player.name,
+        colorIndex: getPlayerColorIndex(player, finalPlayers),
         currentGuess: player.currentGuess,
         score: player.score,
         roundDelta,
@@ -125,7 +127,11 @@ export function WinnerScreen({
             {finalResults.map((player) => (
               <li key={player.id} className="winner-final-item">
                 <div className="winner-final-top">
-                  <span className="winner-final-name">{player.name}</span>
+                  <span
+                    className={`winner-final-name winner-name--color--${player.colorIndex}`}
+                  >
+                    {player.name}
+                  </span>
                   <span className="winner-final-total">{player.score} total</span>
                 </div>
                 <div className="winner-final-bottom">

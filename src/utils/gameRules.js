@@ -3,6 +3,12 @@ export const GAME_MODES = {
   COOP: 'coop',
 };
 
+export const CPU_PLAYER_NAME = 'CPU';
+
+export function isCoopStyleMode(gameMode) {
+  return gameMode === GAME_MODES.COOP;
+}
+
 export const WIN_SCORE = 20;
 export const MAX_ROUNDS = 10;
 
@@ -27,7 +33,7 @@ export const BOUNTY_MAX_PICK = MAX_PICK_COMPETITIVE_NORMAL;
 export const BOUNTY_MAX_PICK_COOP = MAX_PICK_COOP_NORMAL;
 
 export function bountyMaxPickForMode(gameMode = GAME_MODES.COMPETITIVE) {
-  return gameMode === GAME_MODES.COOP ? BOUNTY_MAX_PICK_COOP : BOUNTY_MAX_PICK;
+  return isCoopStyleMode(gameMode) ? BOUNTY_MAX_PICK_COOP : BOUNTY_MAX_PICK;
 }
 
 export const COOP_CLOSE_RANGE = 5;
@@ -57,9 +63,9 @@ export function isChaosRound(round, gameMode = GAME_MODES.COMPETITIVE) {
 export function maxPickForRound(round, gameMode = GAME_MODES.COMPETITIVE) {
   if (isLightningRound(round, gameMode)) return MAX_PICK_LIGHTNING;
   if (isChaosRound(round, gameMode)) return MAX_PICK_CHAOS;
-  return gameMode === GAME_MODES.COMPETITIVE
-    ? MAX_PICK_COMPETITIVE_NORMAL
-    : MAX_PICK_COOP_NORMAL;
+  return isCoopStyleMode(gameMode)
+    ? MAX_PICK_COOP_NORMAL
+    : MAX_PICK_COMPETITIVE_NORMAL;
 }
 
 export function isCoopFinalSyncJackpotRound(
@@ -68,7 +74,7 @@ export function isCoopFinalSyncJackpotRound(
   teamScore = 0,
   winScore = WIN_SCORE
 ) {
-  if (gameMode !== GAME_MODES.COOP || round !== MAX_ROUNDS) return false;
+  if (!isCoopStyleMode(gameMode) || round !== MAX_ROUNDS) return false;
 
   const remainingPoints = Math.max(0, winScore - teamScore);
   const standardMaxPoints = isChaosRound(round, gameMode)
