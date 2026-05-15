@@ -28,6 +28,12 @@ export const LIGHTNING_EXACT_POINTS = 5;
 export const LIGHTNING_CLOSE_RANGE = 3;
 export const LIGHTNING_CLOSE_POINTS = 2;
 
+export const COMEBACK_LIGHTNING_MIN_LEADER_SCORE = 15;
+export const COMEBACK_LIGHTNING_EXACT_POINTS = 8;
+export const COMEBACK_LIGHTNING_OFF_BY_ONE_POINTS = 5;
+export const COMEBACK_LIGHTNING_OFF_BY_TWO_THREE_POINTS = 2;
+export const COMEBACK_LIGHTNING_OFF_BY_TWO_THREE_RANGE = 3;
+
 export const BOUNTY_POINTS = 3;
 export const BOUNTY_MAX_PICK = MAX_PICK_COMPETITIVE_NORMAL;
 export const BOUNTY_MAX_PICK_COOP = MAX_PICK_COOP_NORMAL;
@@ -66,6 +72,23 @@ export function maxPickForRound(round, gameMode = GAME_MODES.COMPETITIVE) {
   return isCoopStyleMode(gameMode)
     ? MAX_PICK_COOP_NORMAL
     : MAX_PICK_COMPETITIVE_NORMAL;
+}
+
+export function getMaxCompetitiveScore(players) {
+  if (!players.length) return 0;
+  return Math.max(...players.map((player) => player.score ?? 0));
+}
+
+export function getComebackEligiblePlayerIds(players) {
+  if (!players.length) return [];
+  const minScore = Math.min(...players.map((player) => player.score ?? 0));
+  return players.filter((player) => player.score === minScore).map((player) => player.id);
+}
+
+export function shouldTriggerComebackLightning(players, comebackLightningUsed) {
+  if (comebackLightningUsed || !players.length) return false;
+  if (getMaxCompetitiveScore(players) < COMEBACK_LIGHTNING_MIN_LEADER_SCORE) return false;
+  return getComebackEligiblePlayerIds(players).length > 0;
 }
 
 export function isCoopFinalSyncJackpotRound(

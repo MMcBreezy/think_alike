@@ -248,7 +248,7 @@ export async function playAirhornSound() {
 export function isNumberMatchFeedback(feedback, gameMode) {
   if (!feedback) return false;
   if (gameMode === GAME_MODES.COMPETITIVE) {
-    return feedback === 'perfect';
+    return feedback === 'perfect' || feedback === 'comeback-lightning-hit';
   }
   return feedback === 'perfect-sync' || feedback === 'jackpot-sync';
 }

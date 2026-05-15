@@ -11,6 +11,10 @@ import {
   LIGHTNING_CLOSE_RANGE,
   LIGHTNING_CLOSE_POINTS,
   LIGHTNING_EXACT_POINTS,
+  COMEBACK_LIGHTNING_EXACT_POINTS,
+  COMEBACK_LIGHTNING_OFF_BY_ONE_POINTS,
+  COMEBACK_LIGHTNING_OFF_BY_TWO_THREE_POINTS,
+  COMEBACK_LIGHTNING_OFF_BY_TWO_THREE_RANGE,
   MAX_PICK_CHAOS,
   MAX_PICK_LIGHTNING,
 } from '../utils/gameRules.js';
@@ -34,12 +38,18 @@ export function RevealPhase({
   jackpotNeeded,
   lightningRound,
   chaosRound,
+  comebackLightningRound = false,
+  comebackEligiblePlayerIds = [],
   lightningTarget,
   nextLabel = 'Next round',
   onNextRound,
   onCardsRevealed,
 }) {
   const reducedMotion = usePrefersReducedMotion();
+  const eligibleIds = useMemo(
+    () => new Set(comebackEligiblePlayerIds),
+    [comebackEligiblePlayerIds],
+  );
   const displayPlayers = useMemo(
     () =>
       [...players].sort(
@@ -123,10 +133,19 @@ export function RevealPhase({
   }, [showCallout, bountyClaimedThisRound, feedback, gameMode, revealKey]);
 
   const calloutContent = (() => {
-    if (isCompetitive && !lightningRound && feedback === 'no-match') {
+    if (isCompetitive && comebackLightningRound && feedback === 'comeback-lightning-hit') {
+      return <p className="reveal-callout reveal-callout-celebrate">Comeback Bullseye!</p>;
+    }
+    if (isCompetitive && comebackLightningRound && feedback === 'comeback-lightning-close') {
+      return <p className="reveal-callout reveal-callout-celebrate">Comeback Close Calls!</p>;
+    }
+    if (isCompetitive && comebackLightningRound && feedback === 'comeback-lightning-miss') {
+      return <p className="reveal-callout reveal-callout-muted">No Comeback Hits</p>;
+    }
+    if (isCompetitive && !lightningRound && !comebackLightningRound && feedback === 'no-match') {
       return <p className="reveal-callout reveal-callout-muted">No Match!</p>;
     }
-    if (isCompetitive && !lightningRound && feedback === 'perfect') {
+    if (isCompetitive && !lightningRound && !comebackLightningRound && feedback === 'perfect') {
       return (
         <p className="reveal-callout reveal-callout-celebrate">Perfect Match!</p>
       );
@@ -189,7 +208,14 @@ export function RevealPhase({
         ) : null}
       </div>
 
-      {jackpotRound ? (
+      {comebackLightningRound ? (
+        <p className="reveal-chaos-note reveal-comeback-note">
+          Comeback Lightning — target was {lightningTarget ?? roundResult?.lightningTarget ?? '?'}.
+          Lowest score only. Exact +{COMEBACK_LIGHTNING_EXACT_POINTS}, off by 1 +
+          {COMEBACK_LIGHTNING_OFF_BY_ONE_POINTS}, off by 2-{COMEBACK_LIGHTNING_OFF_BY_TWO_THREE_RANGE}{' '}
+          +{COMEBACK_LIGHTNING_OFF_BY_TWO_THREE_POINTS}. Picks were 1-{MAX_PICK_LIGHTNING}.
+        </p>
+      ) : jackpotRound ? (
         <p className="reveal-chaos-note reveal-jackpot-note">
           Final Sync Jackpot - picks were 1-
           {roundResult?.jackpotRange ?? COOP_FINAL_SYNC_MAX_PICK}. Exact sync won +{jackpotNeeded}.
@@ -235,6 +261,7 @@ export function RevealPhase({
         {displayPlayers.map((p, index) => {
           const isRevealed = index < revealedCount;
           const colorIndex = getPlayerColorIndex(p, players);
+          const isSatOut = comebackLightningRound && !eligibleIds.has(p.id);
           const roundDelta = roundResult?.roundDeltas?.[p.id] ?? 0;
           const lightningTargetValue =
             lightningTarget ?? roundResult?.lightningTarget ?? null;
@@ -262,9 +289,15 @@ export function RevealPhase({
 
               <span className="reveal-card-num-wrap">
                 {isRevealed ? (
-                  <span className="reveal-card-num reveal-card-num--shown">{p.currentGuess}</span>
+                  isSatOut ? (
+                    <span className="reveal-card-sat-out">Sat out</span>
+                  ) : (
+                    <span className="reveal-card-num reveal-card-num--shown">{p.currentGuess}</span>
+                  )
                 ) : (
-                  <span className="reveal-card-num reveal-card-num--masked">?</span>
+                  <span className="reveal-card-num reveal-card-num--masked">
+                    {isSatOut ? '—' : '?'}
+                  </span>
                 )}
               </span>
 

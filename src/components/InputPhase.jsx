@@ -32,12 +32,14 @@ function maxDigitsForPick(maxPick) {
 
 export function InputPhase({
   players,
+  inputPlayerIndices = null,
   currentPlayerIndex,
   maxPick,
   jackpotRound,
   jackpotNeeded,
   lightningRound,
   chaosRound,
+  comebackLightningRound = false,
   soloVsCpu = false,
   onSubmitSecret,
   onAdvanceAfterPass,
@@ -47,12 +49,16 @@ export function InputPhase({
   const [pendingPass, setPendingPass] = useState(false);
   const passBusyRef = useRef(false);
 
-  const current = players[currentPlayerIndex];
-  const nextPlayer = players[currentPlayerIndex + 1];
-  const isLastPlayer = soloVsCpu || currentPlayerIndex >= players.length - 1;
+  const turnOrder = inputPlayerIndices ?? players.map((_, index) => index);
+  const activePlayerIndex = turnOrder[currentPlayerIndex];
+  const nextActivePlayerIndex = turnOrder[currentPlayerIndex + 1];
+  const current = players[activePlayerIndex];
+  const nextPlayer =
+    nextActivePlayerIndex != null ? players[nextActivePlayerIndex] : null;
+  const isLastPlayer = soloVsCpu || currentPlayerIndex >= turnOrder.length - 1;
   const maxLen = useMemo(() => maxDigitsForPick(maxPick), [maxPick]);
-  const currentColorIndex = getPlayerColorIndex(current, players, currentPlayerIndex);
-  const nextColorIndex = getPlayerColorIndex(nextPlayer, players, currentPlayerIndex + 1);
+  const currentColorIndex = getPlayerColorIndex(current, players, activePlayerIndex);
+  const nextColorIndex = getPlayerColorIndex(nextPlayer, players, nextActivePlayerIndex ?? 0);
 
   useEffect(() => {
     passBusyRef.current = false;
@@ -110,11 +116,20 @@ export function InputPhase({
     feedbackSubmit();
     setDraft('');
     setError('');
-    onSubmitSecret(currentPlayerIndex, value);
+    onSubmitSecret(activePlayerIndex, value);
     if (!isLastPlayer) {
       setPendingPass(true);
     }
-  }, [draft, maxPick, currentPlayerIndex, isLastPlayer, onSubmitSecret]);
+  }, [
+    activePlayerIndex,
+    currentPlayerIndex,
+    draft,
+    maxPick,
+    isLastPlayer,
+    onSubmitSecret,
+    soloVsCpu,
+    turnOrder.length,
+  ]);
 
   const continuePass = useCallback(() => {
     if (passBusyRef.current) return;
@@ -125,13 +140,15 @@ export function InputPhase({
 
   if (!current) return null;
 
-  const rangeHint = jackpotRound
-    ? `Final Sync Jackpot · 1-${maxPick} · exact +${jackpotNeeded} · off by 1 +2 · off by 2-3 +1`
-    : lightningRound
-      ? 'Lightning · 1-10 · exact +5 · within 3 +2 · visible only while you type'
-      : chaosRound
-        ? 'Chaos · 1-20 · double points · visible only while you type'
-        : `1-${maxPick} · visible only while you type`;
+  const rangeHint = comebackLightningRound
+    ? 'Comeback Lightning · 1-10 · exact +8 · off by 1 +5 · off by 2-3 +2'
+    : jackpotRound
+      ? `Final Sync Jackpot · 1-${maxPick} · exact +${jackpotNeeded} · off by 1 +2 · off by 2-3 +1`
+      : lightningRound
+        ? 'Lightning · 1-10 · exact +5 · within 3 +2 · visible only while you type'
+        : chaosRound
+          ? 'Chaos · 1-20 · double points · visible only while you type'
+          : `1-${maxPick} · visible only while you type`;
 
   return (
     <div
@@ -144,7 +161,12 @@ export function InputPhase({
         data-secret-entry
       >
         <div className="input-phase-top">
-          {jackpotRound ? (
+          {comebackLightningRound ? (
+            <p className="input-comeback-strip" role="status">
+              Comeback Lightning — lowest score only. Guess the computer&apos;s number from 1 to{' '}
+              {maxPick}.
+            </p>
+          ) : jackpotRound ? (
             <p className="input-jackpot-strip" role="status">
               Final Sync Jackpot - pick from 1 to {maxPick}. Exact sync wins +{jackpotNeeded}.
             </p>

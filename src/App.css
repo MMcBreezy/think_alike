@@ -260,6 +260,13 @@
   box-shadow: 0 0 0 1px rgba(122, 92, 255, 0.18);
 }
 
+.round-badge--comeback {
+  color: #ffedd5;
+  border-color: rgba(245, 158, 11, 0.52);
+  background: rgba(234, 88, 12, 0.2);
+  box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.16);
+}
+
 .round-badge--pulse {
   animation: roundBadgePulse 1.35s ease;
 }
@@ -291,6 +298,10 @@
 
 .round-badge--jackpot.round-badge--pulse {
   box-shadow: 0 0 0 1px rgba(122, 92, 255, 0.18), 0 0 18px rgba(64, 192, 207, 0.24);
+}
+
+.round-badge--comeback.round-badge--pulse {
+  box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.16), 0 0 18px rgba(245, 158, 11, 0.28);
 }
 
 .card-rise {

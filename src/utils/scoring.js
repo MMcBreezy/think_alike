@@ -15,6 +15,10 @@ import {
   LIGHTNING_CLOSE_POINTS,
   LIGHTNING_CLOSE_RANGE,
   LIGHTNING_EXACT_POINTS,
+  COMEBACK_LIGHTNING_EXACT_POINTS,
+  COMEBACK_LIGHTNING_OFF_BY_ONE_POINTS,
+  COMEBACK_LIGHTNING_OFF_BY_TWO_THREE_POINTS,
+  COMEBACK_LIGHTNING_OFF_BY_TWO_THREE_RANGE,
   WIN_SCORE,
 } from './gameRules.js';
 
@@ -151,6 +155,54 @@ export function calculateLightningScore(players, lightningTarget, options = {}) 
     feedback,
     lightningTarget,
     ...bountyResult,
+  };
+}
+
+export function calculateComebackLightningScore(players, lightningTarget, eligiblePlayerIds) {
+  const eligibleIds = new Set(eligiblePlayerIds);
+  const roundDeltas = Object.fromEntries(players.map((player) => [player.id, 0]));
+
+  for (const player of players) {
+    if (!eligibleIds.has(player.id) || !Number.isInteger(player.currentGuess)) continue;
+    const distance = Math.abs(player.currentGuess - lightningTarget);
+    if (distance === 0) {
+      roundDeltas[player.id] = COMEBACK_LIGHTNING_EXACT_POINTS;
+    } else if (distance === 1) {
+      roundDeltas[player.id] = COMEBACK_LIGHTNING_OFF_BY_ONE_POINTS;
+    } else if (distance <= COMEBACK_LIGHTNING_OFF_BY_TWO_THREE_RANGE) {
+      roundDeltas[player.id] = COMEBACK_LIGHTNING_OFF_BY_TWO_THREE_POINTS;
+    }
+  }
+
+  const updatedPlayers = players.map((player) => ({
+    ...player,
+    score: player.score + (roundDeltas[player.id] ?? 0),
+  }));
+
+  const eligibleWithGuesses = players.filter(
+    (player) => eligibleIds.has(player.id) && Number.isInteger(player.currentGuess),
+  );
+  const anyExact = eligibleWithGuesses.some(
+    (player) => player.currentGuess === lightningTarget,
+  );
+  const anyPoints = eligibleWithGuesses.some(
+    (player) => (roundDeltas[player.id] ?? 0) > 0,
+  );
+
+  let feedback = 'comeback-lightning-miss';
+  if (anyExact) feedback = 'comeback-lightning-hit';
+  else if (anyPoints) feedback = 'comeback-lightning-close';
+
+  return {
+    mode: GAME_MODES.COMPETITIVE,
+    players: updatedPlayers,
+    roundDeltas,
+    feedback,
+    lightningTarget,
+    comebackLightningRound: true,
+    bountyHit: false,
+    bountyWinners: [],
+    bountyNumber: null,
   };
 }
 

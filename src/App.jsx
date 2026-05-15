@@ -20,8 +20,10 @@ import {
   isCoopStyleMode,
   isLightningRound,
   maxPickForRound,
+  shouldTriggerComebackLightning,
+  getComebackEligiblePlayerIds,
 } from './utils/gameRules.js';
-import { calculateRoundResults } from './utils/scoring.js';
+import { calculateRoundResults, calculateComebackLightningScore } from './utils/scoring.js';
 import { readShowBountyForTesting, writeShowBountyForTesting } from './utils/devPreferences.js';
 import {
   getSoundVolumePercent,
@@ -86,6 +88,34 @@ function createBountyNumber(gameMode) {
   return randomIntInclusive(1, bountyMaxPickForMode(gameMode));
 }
 
+function createComebackLightningTarget() {
+  return randomIntInclusive(1, MAX_PICK_LIGHTNING);
+}
+
+function getCompetitiveInputIndices(state) {
+  if (!state.comebackLightningRound) {
+    return state.players.map((_, index) => index);
+  }
+
+  const eligible = new Set(state.comebackEligiblePlayerIds ?? []);
+  return state.players
+    .map((player, index) => ({ player, index }))
+    .filter(({ player }) => eligible.has(player.id))
+    .sort(
+      (a, b) =>
+        getPlayerColorIndex(a.player, state.players, a.index) -
+        getPlayerColorIndex(b.player, state.players, b.index)
+    )
+    .map(({ index }) => index);
+}
+
+function getTurnInputIndices(state) {
+  if (state.gameMode !== GAME_MODES.COMPETITIVE) {
+    return state.players.map((_, index) => index);
+  }
+  return getCompetitiveInputIndices(state);
+}
+
 function getCoopFeedbackLabel(feedback) {
   if (feedback === 'perfect-sync') return 'Perfect Sync!';
   if (feedback === 'close-sync') return 'Close Sync!';
@@ -134,6 +164,9 @@ const initialState = {
   winnerIds: [],
   roundResult: null,
   pendingFinalOutcome: null,
+  comebackLightningUsed: false,
+  comebackLightningRound: false,
+  comebackEligiblePlayerIds: [],
 };
 
 function gameReducer(state, action) {
@@ -162,11 +195,15 @@ function gameReducer(state, action) {
         bountyClaimedBy: [],
         phase: 'input',
         round: 1,
+        comebackLightningUsed: false,
+        comebackLightningRound: false,
+        comebackEligiblePlayerIds: [],
       };
     }
     case 'ADVANCE_AFTER_PASS': {
       if (state.phase !== 'input') return state;
-      if (state.currentPlayerIndex >= state.players.length - 1) return state;
+      const inputIndices = getTurnInputIndices(state);
+      if (state.currentPlayerIndex >= inputIndices.length - 1) return state;
       return {
         ...state,
         currentPlayerIndex: state.currentPlayerIndex + 1,
@@ -177,17 +214,27 @@ function gameReducer(state, action) {
       if (state.phase !== 'input') return state;
       if (playerIndex < 0 || playerIndex >= state.players.length) return state;
       if (state.players[playerIndex]?.currentGuess != null) return state;
-      const lightningRound = isLightningRound(state.round, state.gameMode);
-      const chaosRound = isChaosRound(state.round, state.gameMode);
+
+      const inputIndices = getTurnInputIndices(state);
+      const expectedPlayerIndex = inputIndices[state.currentPlayerIndex];
+      if (playerIndex !== expectedPlayerIndex) return state;
+
+      const comebackLightningRound = Boolean(state.comebackLightningRound);
+      const lightningRound =
+        !comebackLightningRound && isLightningRound(state.round, state.gameMode);
+      const chaosRound =
+        !comebackLightningRound && isChaosRound(state.round, state.gameMode);
       const coopJackpotRound = isCoopFinalSyncJackpotRound(
         state.round,
         state.gameMode,
         state.teamScore,
         WIN_SCORE
       );
-      const maxPick = coopJackpotRound
-        ? COOP_FINAL_SYNC_MAX_PICK
-        : maxPickForRound(state.round, state.gameMode);
+      const maxPick = comebackLightningRound
+        ? MAX_PICK_LIGHTNING
+        : coopJackpotRound
+          ? COOP_FINAL_SYNC_MAX_PICK
+          : maxPickForRound(state.round, state.gameMode);
       if (!Number.isInteger(value) || value < 1 || value > maxPick) return state;
       let nextPlayers = state.players.map((p, i) =>
         i === playerIndex ? { ...p, currentGuess: value } : p
@@ -202,14 +249,20 @@ function gameReducer(state, action) {
         nextPlayers = nextPlayers.map((p, i) =>
           i === 1 ? { ...p, currentGuess: cpuGuess } : p
         );
-      } else if (playerIndex < state.players.length - 1) {
+      } else if (state.currentPlayerIndex < inputIndices.length - 1) {
         return {
           ...state,
           players: nextPlayers,
         };
       }
 
-      const roundResult = calculateRoundResults(nextPlayers, state.gameMode, {
+      const roundResult = comebackLightningRound
+        ? calculateComebackLightningScore(
+            nextPlayers,
+            state.lightningTarget,
+            state.comebackEligiblePlayerIds
+          )
+        : calculateRoundResults(nextPlayers, state.gameMode, {
         chaosRound,
         jackpotRound: coopJackpotRound,
         lightningRound,
@@ -219,7 +272,7 @@ function gameReducer(state, action) {
         maxPick,
         teamScore: state.teamScore,
         winScore: WIN_SCORE,
-      });
+          });
 
       if (state.gameMode === GAME_MODES.COMPETITIVE) {
         const bountyClaimed = state.bountyClaimed || Boolean(roundResult.bountyHit);
@@ -299,6 +352,41 @@ function gameReducer(state, action) {
         };
       }
 
+      if (state.comebackLightningRound) {
+        const nextRound = state.round + 1;
+        return {
+          ...state,
+          players: clearGuesses(state.players),
+          comebackLightningRound: false,
+          comebackEligiblePlayerIds: [],
+          lightningTarget: createLightningTarget(nextRound, state.gameMode),
+          currentPlayerIndex: 0,
+          round: nextRound,
+          phase: 'input',
+          roundResult: null,
+          pendingFinalOutcome: null,
+        };
+      }
+
+      if (
+        state.gameMode === GAME_MODES.COMPETITIVE &&
+        !state.comebackLightningUsed &&
+        shouldTriggerComebackLightning(state.players, state.comebackLightningUsed)
+      ) {
+        return {
+          ...state,
+          players: clearGuesses(state.players),
+          comebackLightningRound: true,
+          comebackLightningUsed: true,
+          comebackEligiblePlayerIds: getComebackEligiblePlayerIds(state.players),
+          lightningTarget: createComebackLightningTarget(),
+          currentPlayerIndex: 0,
+          phase: 'input',
+          roundResult: null,
+          pendingFinalOutcome: null,
+        };
+      }
+
       const nextRound = state.round + 1;
       return {
         ...state,
@@ -309,6 +397,8 @@ function gameReducer(state, action) {
         phase: 'input',
         roundResult: null,
         pendingFinalOutcome: null,
+        comebackLightningRound: false,
+        comebackEligiblePlayerIds: [],
       };
     }
     case 'PLAY_AGAIN': {
@@ -327,6 +417,9 @@ function gameReducer(state, action) {
         winnerIds: [],
         roundResult: null,
         pendingFinalOutcome: null,
+        comebackLightningUsed: false,
+        comebackLightningRound: false,
+        comebackEligiblePlayerIds: [],
       };
     }
     case 'NEW_GAME':
@@ -356,9 +449,14 @@ export default function App() {
     roundResult,
     pendingFinalOutcome,
     player2IsCpu,
+    comebackLightningRound,
+    comebackEligiblePlayerIds,
   } = state;
 
   const isCompetitive = gameMode === GAME_MODES.COMPETITIVE;
+  const inputPlayerIndices =
+    phase === 'input' ? getTurnInputIndices(state) : players.map((_, index) => index);
+  const activeInputPlayerIndex = inputPlayerIndices[currentPlayerIndex] ?? 0;
   const isTeamMode = isCoopStyleMode(gameMode);
   const bountyActive = !bountyClaimed && Number.isInteger(bountyNumber);
   const bountyMaxPick = bountyMaxPickForMode(gameMode);
@@ -373,7 +471,11 @@ export default function App() {
       ? roundResult.jackpotPoints ?? 0
       : Math.max(0, WIN_SCORE - teamScore)
     : 0;
-  const maxPick = coopJackpotRound ? COOP_FINAL_SYNC_MAX_PICK : maxPickForRound(round, gameMode);
+  const maxPick = comebackLightningRound
+    ? MAX_PICK_LIGHTNING
+    : coopJackpotRound
+      ? COOP_FINAL_SYNC_MAX_PICK
+      : maxPickForRound(round, gameMode);
 
   const startGame = useCallback(({ gameMode: nextGameMode, names, player2IsCpu: nextPlayer2IsCpu }) => {
     dispatch({
@@ -444,7 +546,8 @@ export default function App() {
   const showAppMenu = phase === 'setup' || players.length > 0;
   const showMatchMenuActions = phase !== 'setup' && players.length > 0;
   const showRoundBadge = phase !== 'setup' && phase !== 'winner' && phase !== 'loser';
-  const isSpecialRound = lightningRound || chaosRound || coopJackpotRound;
+  const isSpecialRound =
+    lightningRound || chaosRound || coopJackpotRound || comebackLightningRound;
   const [badgePulse, setBadgePulse] = useState(false);
 
   useEffect(() => {
@@ -454,8 +557,8 @@ export default function App() {
     return () => clearTimeout(timer);
   }, [round, isSpecialRound, showRoundBadge]);
   const activeTurnColorIndex =
-    players[currentPlayerIndex] != null
-      ? getPlayerColorIndex(players[currentPlayerIndex], players, currentPlayerIndex)
+    players[activeInputPlayerIndex] != null
+      ? getPlayerColorIndex(players[activeInputPlayerIndex], players, activeInputPlayerIndex)
       : 0;
   const turnThemeClass =
     phase === 'input' && players.length > 0
@@ -465,7 +568,9 @@ export default function App() {
         : '';
   const appSub = 'Great minds think alike';
   const roundBadgeLabel = isCompetitive
-    ? `Round ${round}${lightningRound ? ' · Lightning' : chaosRound ? ' · Chaos' : ''}`
+    ? comebackLightningRound
+      ? 'Comeback Lightning'
+      : `Round ${round}${lightningRound ? ' · Lightning' : chaosRound ? ' · Chaos' : ''}`
     : `Round ${round} / ${MAX_ROUNDS}${coopJackpotRound ? ' · Final Sync Jackpot' : chaosRound ? ' · Chaos' : ''}`;
 
   return (
@@ -492,7 +597,7 @@ export default function App() {
           <p className="app-sub">{appSub}</p>
           {showRoundBadge && (
             <span
-              className={`round-badge${chaosRound ? ' round-badge--chaos' : ''}${lightningRound ? ' round-badge--lightning' : ''}${coopJackpotRound ? ' round-badge--jackpot' : ''}${badgePulse ? ' round-badge--pulse' : ''}`}
+              className={`round-badge${chaosRound ? ' round-badge--chaos' : ''}${lightningRound ? ' round-badge--lightning' : ''}${coopJackpotRound ? ' round-badge--jackpot' : ''}${comebackLightningRound ? ' round-badge--comeback' : ''}${badgePulse ? ' round-badge--pulse' : ''}`}
             >
               {roundBadgeLabel}
             </span>
@@ -536,14 +641,16 @@ export default function App() {
             )}
           </div>
           <InputPhase
-            key={`input-round-${round}`}
+            key={`input-round-${round}-${comebackLightningRound ? 'comeback' : 'normal'}`}
             players={players}
+            inputPlayerIndices={inputPlayerIndices}
             currentPlayerIndex={currentPlayerIndex}
             maxPick={maxPick}
             jackpotRound={coopJackpotRound}
             jackpotNeeded={jackpotNeeded}
             lightningRound={lightningRound}
             chaosRound={chaosRound}
+            comebackLightningRound={comebackLightningRound}
             soloVsCpu={player2IsCpu}
             onSubmitSecret={handleSecretSubmit}
             onAdvanceAfterPass={advanceAfterPass}
@@ -596,6 +703,8 @@ export default function App() {
             jackpotNeeded={jackpotNeeded}
             lightningRound={lightningRound}
             chaosRound={chaosRound}
+            comebackLightningRound={Boolean(roundResult?.comebackLightningRound)}
+            comebackEligiblePlayerIds={comebackEligiblePlayerIds}
             lightningTarget={lightningTarget}
             nextLabel={pendingFinalOutcome ? 'See results' : 'Next round'}
             onNextRound={nextRound}

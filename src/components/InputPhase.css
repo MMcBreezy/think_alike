@@ -172,6 +172,20 @@
   box-shadow: 0 0 18px rgba(124, 140, 255, 0.18);
 }
 
+.input-comeback-strip {
+  margin: 0;
+  padding: 0.4rem 0.55rem;
+  border-radius: var(--radius-sm);
+  text-align: center;
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.25;
+  color: #fff6e8;
+  background: linear-gradient(135deg, #f59e0b, #ea580c);
+  border: 1px solid rgba(245, 158, 11, 0.65);
+  box-shadow: 0 0 18px rgba(245, 158, 11, 0.2);
+}
+
 .input-jackpot-strip {
   margin: 0;
   padding: 0.4rem 0.55rem;
