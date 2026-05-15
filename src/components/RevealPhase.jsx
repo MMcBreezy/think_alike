@@ -14,6 +14,11 @@ import {
   MAX_PICK_CHAOS,
   MAX_PICK_LIGHTNING,
 } from '../utils/gameRules.js';
+import {
+  feedbackBountyClaim,
+  feedbackNumberMatch,
+  isNumberMatchFeedback,
+} from '../utils/gameFeedback.js';
 import { usePrefersReducedMotion } from '../utils/usePrefersReducedMotion.js';
 import './RevealPhase.css';
 
@@ -31,6 +36,7 @@ export function RevealPhase({
   lightningTarget,
   nextLabel = 'Next round',
   onNextRound,
+  onCardsRevealed,
 }) {
   const reducedMotion = usePrefersReducedMotion();
   const sorted = useMemo(
@@ -93,6 +99,28 @@ export function RevealPhase({
       if (calloutTimer) window.clearTimeout(calloutTimer);
     };
   }, [revealKey, sorted.length, reducedMotion]);
+
+  const cardsRevealed = revealedCount >= sorted.length;
+
+  useEffect(() => {
+    if (cardsRevealed) onCardsRevealed?.();
+  }, [cardsRevealed, onCardsRevealed]);
+
+  useEffect(() => {
+    if (!showCallout || !isNumberMatchFeedback(feedback, gameMode)) return;
+    feedbackNumberMatch();
+  }, [showCallout, feedback, gameMode, revealKey]);
+
+  const bountyClaimedThisRound =
+    Boolean(roundResult?.bountyHit) && Number.isInteger(roundResult?.bountyNumber);
+
+  useEffect(() => {
+    if (!showCallout || !bountyClaimedThisRound) return undefined;
+
+    const delayMs = isNumberMatchFeedback(feedback, gameMode) ? 480 : 0;
+    const timer = window.setTimeout(() => feedbackBountyClaim(), delayMs);
+    return () => window.clearTimeout(timer);
+  }, [showCallout, bountyClaimedThisRound, feedback, gameMode, revealKey]);
 
   const calloutContent = (() => {
     if (isCompetitive && !lightningRound && feedback === 'no-match') {

@@ -21,6 +21,11 @@ import {
 } from './utils/gameRules.js';
 import { calculateRoundResults } from './utils/scoring.js';
 import { readShowBountyForTesting, writeShowBountyForTesting } from './utils/devPreferences.js';
+import {
+  getSoundVolumePercent,
+  previewKeyTapSound,
+  setSoundVolumePercent,
+} from './utils/gameFeedback.js';
 
 function createPlayer(name, index, gameMode) {
   const basePlayer = {
@@ -308,6 +313,7 @@ function gameReducer(state, action) {
 export default function App() {
   const [state, dispatch] = useReducer(gameReducer, initialState);
   const [showBountyForTesting, setShowBountyForTesting] = useState(readShowBountyForTesting);
+  const [soundVolumePercent, setSoundVolumePercentState] = useState(getSoundVolumePercent);
   const {
     gameMode,
     players,
@@ -373,6 +379,26 @@ export default function App() {
     });
   }, []);
 
+  const handleSoundVolumeChange = useCallback((percent) => {
+    setSoundVolumePercent(percent);
+    setSoundVolumePercentState(getSoundVolumePercent());
+    if (percent > 0) {
+      void previewKeyTapSound();
+    }
+  }, []);
+
+  const [scoreAnimateReady, setScoreAnimateReady] = useState(false);
+
+  const handleCardsRevealed = useCallback(() => {
+    setScoreAnimateReady(true);
+  }, []);
+
+  useEffect(() => {
+    if (phase === 'reveal') {
+      setScoreAnimateReady(false);
+    }
+  }, [phase, round, roundResult]);
+
   const winners = players.filter((player) => winnerIds.includes(player.id));
   const competitiveWinners = winners.map((player) => ({
     id: player.id,
@@ -416,6 +442,8 @@ export default function App() {
           <AppMenu
             gameMode={gameMode}
             showMatchActions={showMatchMenuActions}
+            soundVolumePercent={soundVolumePercent}
+            onSoundVolumeChange={handleSoundVolumeChange}
             showBountyForTesting={showBountyForTesting}
             onToggleShowBounty={toggleShowBountyForTesting}
             onResetMatch={playAgain}
@@ -498,7 +526,7 @@ export default function App() {
                 bountyNumber={bountyNumber}
                 bountyMaxPick={bountyMaxPick}
                 showBountyForTesting={showBountyForTesting}
-                animateScore
+                animateScore={scoreAnimateReady}
                 roundDeltas={roundResult?.roundDeltas}
                 compact
               />
@@ -516,7 +544,7 @@ export default function App() {
                 players={players}
                 bountyMaxPick={bountyMaxPick}
                 showBountyForTesting={showBountyForTesting}
-                animateScore
+                animateScore={scoreAnimateReady}
                 teamPointsGain={roundResult?.teamPoints ?? 0}
                 compact
               />
@@ -533,6 +561,7 @@ export default function App() {
             lightningTarget={lightningTarget}
             nextLabel={pendingFinalOutcome ? 'See results' : 'Next round'}
             onNextRound={nextRound}
+            onCardsRevealed={handleCardsRevealed}
           />
         </>
       )}

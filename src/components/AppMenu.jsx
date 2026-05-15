@@ -5,6 +5,8 @@ import { GAME_MODES } from '../utils/gameRules.js';
 export function AppMenu({
   gameMode,
   showMatchActions = true,
+  soundVolumePercent = 100,
+  onSoundVolumeChange,
   showBountyForTesting = false,
   onToggleShowBounty,
   onResetMatch,
@@ -59,6 +61,13 @@ export function AppMenu({
     onToggleShowBounty?.();
   }, [onToggleShowBounty]);
 
+  const handleVolumeChange = useCallback(
+    (event) => {
+      onSoundVolumeChange?.(Number(event.target.value));
+    },
+    [onSoundVolumeChange],
+  );
+
   return (
     <div className="app-menu" ref={rootRef}>
       <button
@@ -74,6 +83,27 @@ export function AppMenu({
       </button>
       {open && (
         <div id="app-menu-dropdown" className="app-menu-dropdown" role="menu">
+          <div className="app-menu-sound" role="presentation">
+            <label className="app-menu-volume" htmlFor="app-menu-sound-volume">
+              <span className="app-menu-volume-label">Sound volume</span>
+              <span className="app-menu-volume-value">{soundVolumePercent}%</span>
+            </label>
+            <input
+              id="app-menu-sound-volume"
+              type="range"
+              className="app-menu-volume-slider"
+              min={0}
+              max={100}
+              step={5}
+              value={soundVolumePercent}
+              onChange={handleVolumeChange}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={soundVolumePercent}
+              aria-label="Sound volume"
+            />
+          </div>
+          <div className="app-menu-divider" role="separator" />
           <div
             className={`app-menu-section app-menu-section--collapsible${devOpen ? ' app-menu-section--open' : ''}`}
             role="presentation"

@@ -53,7 +53,7 @@ function ScoreboardRow({
   animateScore = false,
   isWinner = false,
 }) {
-  const startScore = animateScore ? Math.max(0, player.score - roundDelta) : player.score;
+  const preRoundScore = Math.max(0, player.score - roundDelta);
   const [highlight, setHighlight] = useState(false);
 
   useEffect(() => {
@@ -61,14 +61,15 @@ function ScoreboardRow({
   }, [player.score, animateScore]);
 
   const displayedScore = useCountUp(player.score, {
-    start: startScore,
+    start: preRoundScore,
     enabled: animateScore,
     onComplete: () => {
       if (roundDelta > 0) setHighlight(true);
     },
   });
+  const shownScore = animateScore ? displayedScore : preRoundScore;
   const pct =
-    winScore > 0 ? Math.min(100, Math.max(0, (displayedScore / winScore) * 100)) : 0;
+    winScore > 0 ? Math.min(100, Math.max(0, (shownScore / winScore) * 100)) : 0;
 
   return (
     <li
@@ -79,7 +80,7 @@ function ScoreboardRow({
           {player.name}
         </span>
         <span className="scoreboard-fraction">
-          {displayedScore} / {winScore}
+          {shownScore} / {winScore}
         </span>
       </div>
       <div className="scoreboard-track" aria-hidden>

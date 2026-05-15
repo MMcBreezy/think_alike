@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { feedbackAirhorn } from '../utils/gameFeedback.js';
 import { usePrefersReducedMotion } from '../utils/usePrefersReducedMotion.js';
 import './Confetti.css';
 
@@ -16,6 +17,8 @@ export function Confetti({ active = false }) {
 
   useEffect(() => {
     if (!active || reducedMotion) return undefined;
+
+    feedbackAirhorn();
 
     const canvas = canvasRef.current;
     if (!canvas) return undefined;

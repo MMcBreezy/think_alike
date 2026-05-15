@@ -22,7 +22,7 @@ export function TeamScoreboard({
   teamPointsGain = 0,
   compact = false,
 }) {
-  const startScore = animateScore ? Math.max(0, teamScore - teamPointsGain) : teamScore;
+  const preRoundScore = Math.max(0, teamScore - teamPointsGain);
   const [highlight, setHighlight] = useState(false);
 
   useEffect(() => {
@@ -30,14 +30,15 @@ export function TeamScoreboard({
   }, [teamScore, animateScore]);
 
   const displayedScore = useCountUp(teamScore, {
-    start: startScore,
+    start: preRoundScore,
     enabled: animateScore,
     onComplete: () => {
       if (teamPointsGain > 0) setHighlight(true);
     },
   });
+  const shownScore = animateScore ? displayedScore : preRoundScore;
   const pct =
-    winScore > 0 ? Math.min(100, Math.max(0, (displayedScore / winScore) * 100)) : 0;
+    winScore > 0 ? Math.min(100, Math.max(0, (shownScore / winScore) * 100)) : 0;
 
   const bountyNote = (() => {
     if (bountyActive) {
@@ -100,7 +101,7 @@ export function TeamScoreboard({
         <div className="scoreboard-row-top">
           <span className="scoreboard-name">Team Score</span>
           <span className="scoreboard-fraction">
-            {displayedScore} / {winScore}
+            {shownScore} / {winScore}
           </span>
         </div>
         <div className="scoreboard-track" aria-hidden>

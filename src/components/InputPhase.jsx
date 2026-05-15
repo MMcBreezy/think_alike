@@ -1,5 +1,21 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  feedbackBackspace,
+  feedbackClear,
+  feedbackKeyTap,
+  feedbackSubmit,
+  primeAudio,
+} from '../utils/gameFeedback.js';
 import './InputPhase.css';
+
+function tryAppendDigit(prev, digit, maxLen, maxPick) {
+  if (prev.length >= maxLen) return prev;
+  const next = prev + digit;
+  if (next.length > 1 && next.startsWith('0')) return prev;
+  const n = Number(next);
+  if (n > maxPick) return prev;
+  return next;
+}
 
 function parseGuess(raw, maxPick) {
   const t = raw.trim();
@@ -49,13 +65,11 @@ export function InputPhase({
 
   const appendDigit = useCallback(
     (d) => {
+      void primeAudio();
       setError('');
       setDraft((prev) => {
-        if (prev.length >= maxLen) return prev;
-        const next = prev + d;
-        if (next.length > 1 && next.startsWith('0')) return prev;
-        const n = Number(next);
-        if (n > maxPick) return prev;
+        const next = tryAppendDigit(prev, d, maxLen, maxPick);
+        if (next !== prev) feedbackKeyTap(d);
         return next;
       });
     },
@@ -63,22 +77,34 @@ export function InputPhase({
   );
 
   const backspace = useCallback(() => {
+    void primeAudio();
     setError('');
-    setDraft((prev) => prev.slice(0, -1));
+    setDraft((prev) => {
+      if (prev.length === 0) return prev;
+      feedbackBackspace();
+      return prev.slice(0, -1);
+    });
   }, []);
 
   const clear = useCallback(() => {
+    void primeAudio();
     setError('');
-    setDraft('');
+    setDraft((prev) => {
+      if (prev.length === 0) return prev;
+      feedbackClear();
+      return '';
+    });
   }, []);
 
   const submit = useCallback(() => {
+    void primeAudio();
     const value = parseGuess(draft, maxPick);
     if (value == null) {
       setError(`Enter a whole number from 1 to ${maxPick}.`);
       setDraft('');
       return;
     }
+    feedbackSubmit();
     setDraft('');
     setError('');
     onSubmitSecret(currentPlayerIndex, value);
