@@ -14,6 +14,70 @@
   color: var(--text-muted);
 }
 
+.scoreboard-bounty {
+  margin: -0.35rem 0 0.65rem;
+  font-size: 0.76rem;
+  font-weight: 650;
+  line-height: 1.35;
+  color: var(--text-muted);
+}
+
+.scoreboard-bounty--active {
+  color: #f0c14a;
+}
+
+.scoreboard-bounty--dev {
+  margin-top: -0.45rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #ff8fab;
+}
+
+.scoreboard--compact .scoreboard-bounty {
+  margin: -0.15rem 0 0.35rem;
+  font-size: 0.67rem;
+}
+
+.scoreboard-bounty-name,
+.scoreboard-name {
+  --player-accent: var(--text);
+}
+
+.scoreboard-bounty-name {
+  font-weight: 750;
+  color: var(--player-accent);
+}
+
+.scoreboard-name--color--0,
+.scoreboard-bounty-name--color--0 {
+  --player-accent: #6ec9ff;
+}
+
+.scoreboard-name--color--1,
+.scoreboard-bounty-name--color--1 {
+  --player-accent: #f0c14a;
+}
+
+.scoreboard-name--color--2,
+.scoreboard-bounty-name--color--2 {
+  --player-accent: #c4a8ff;
+}
+
+.scoreboard-name--color--3,
+.scoreboard-bounty-name--color--3 {
+  --player-accent: #5ee9b8;
+}
+
+.scoreboard-name--color--4,
+.scoreboard-bounty-name--color--4 {
+  --player-accent: #ff8fab;
+}
+
+.scoreboard-name--color--5,
+.scoreboard-bounty-name--color--5 {
+  --player-accent: #9ab8ff;
+}
+
 .scoreboard-list {
   list-style: none;
   margin: 0;

@@ -22,6 +22,14 @@ export const LIGHTNING_EXACT_POINTS = 5;
 export const LIGHTNING_CLOSE_RANGE = 3;
 export const LIGHTNING_CLOSE_POINTS = 2;
 
+export const BOUNTY_POINTS = 3;
+export const BOUNTY_MAX_PICK = MAX_PICK_COMPETITIVE_NORMAL;
+export const BOUNTY_MAX_PICK_COOP = MAX_PICK_COOP_NORMAL;
+
+export function bountyMaxPickForMode(gameMode = GAME_MODES.COMPETITIVE) {
+  return gameMode === GAME_MODES.COOP ? BOUNTY_MAX_PICK_COOP : BOUNTY_MAX_PICK;
+}
+
 export const COOP_CLOSE_RANGE = 5;
 export const COOP_NEAR_RANGE = 1;
 export const COOP_EXACT_POINTS = 5;

@@ -1,5 +1,7 @@
 import { useMemo } from 'react';
+import { BountyClaimants } from './Scoreboard.jsx';
 import {
+  BOUNTY_POINTS,
   COOP_FINAL_SYNC_CLOSE_RANGE,
   COOP_FINAL_SYNC_CLOSE_POINTS,
   COOP_FINAL_SYNC_MAX_PICK,
@@ -63,6 +65,23 @@ export function RevealPhase({
           Chaos round - picks were 1-{MAX_PICK_CHAOS} and this round was worth double points.
         </p>
       ) : null}
+      {roundResult?.bountyHit && Number.isInteger(roundResult.bountyNumber) && (
+        <p className="reveal-chaos-note reveal-bounty-note">
+          Bounty claimed! The number was {roundResult.bountyNumber}.{' '}
+          {roundResult.bountyWinners?.length ? (
+            isCompetitive ? (
+              roundResult.bountyWinners
+                .map((winner) => `${winner.name} +${BOUNTY_POINTS}`)
+                .join(' · ')
+            ) : (
+              <>
+                <BountyClaimants claimants={roundResult.bountyWinners} players={players} />{' '}
+                (+{BOUNTY_POINTS} team points each)
+              </>
+            )
+          ) : null}
+        </p>
+      )}
 
       <ul
         className={`reveal-grid${isCompetitive ? ' reveal-grid--competitive' : ''}`}

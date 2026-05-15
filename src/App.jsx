@@ -8,6 +8,7 @@ import { WinnerScreen } from './components/WinnerScreen.jsx';
 import { Scoreboard } from './components/Scoreboard.jsx';
 import { TeamScoreboard } from './components/TeamScoreboard.jsx';
 import {
+  bountyMaxPickForMode,
   COOP_FINAL_SYNC_MAX_PICK,
   GAME_MODES,
   MAX_PICK_LIGHTNING,
@@ -68,6 +69,10 @@ function createLightningTarget(round, gameMode) {
   return randomIntInclusive(1, MAX_PICK_LIGHTNING);
 }
 
+function createBountyNumber(gameMode) {
+  return randomIntInclusive(1, bountyMaxPickForMode(gameMode));
+}
+
 function getCoopFeedbackLabel(feedback) {
   if (feedback === 'perfect-sync') return 'Perfect Sync!';
   if (feedback === 'close-sync') return 'Close Sync!';
@@ -87,6 +92,7 @@ function createCoopRoundHistoryEntry(round, players, roundResult, teamScoreAfter
     chaosRound,
     lightningRound: Boolean(roundResult.lightningRound),
     jackpotRound: Boolean(roundResult.jackpotRound),
+    bountyRound: Boolean(roundResult.bountyHit),
     feedback: roundResult.feedback,
     feedbackLabel: getCoopFeedbackLabel(roundResult.feedback),
     teamPoints: roundResult.teamPoints,
@@ -105,6 +111,9 @@ const initialState = {
   teamScore: 0,
   roundHistory: [],
   lightningTarget: null,
+  bountyNumber: null,
+  bountyClaimed: false,
+  bountyClaimedBy: [],
   currentPlayerIndex: 0,
   round: 1,
   phase: 'setup',
@@ -126,6 +135,9 @@ function gameReducer(state, action) {
         teamScore: 0,
         roundHistory: [],
         lightningTarget: createLightningTarget(1, gameMode),
+        bountyNumber: createBountyNumber(gameMode),
+        bountyClaimed: false,
+        bountyClaimedBy: [],
         phase: 'input',
         round: 1,
       };
@@ -170,11 +182,18 @@ function gameReducer(state, action) {
         jackpotRound: coopJackpotRound,
         lightningRound,
         lightningTarget: state.lightningTarget,
+        bountyNumber: state.bountyNumber,
+        bountyClaimed: state.bountyClaimed,
+        maxPick,
         teamScore: state.teamScore,
         winScore: WIN_SCORE,
       });
 
       if (state.gameMode === GAME_MODES.COMPETITIVE) {
+        const bountyClaimed = state.bountyClaimed || Boolean(roundResult.bountyHit);
+        const bountyClaimedBy = roundResult.bountyHit
+          ? roundResult.bountyWinners
+          : state.bountyClaimedBy;
         const winner = roundResult.players.find((player) => player.score >= WIN_SCORE);
         if (winner) {
           return {
@@ -185,6 +204,8 @@ function gameReducer(state, action) {
             winnerId: winner.id,
             roundResult,
             lightningTarget: state.lightningTarget,
+            bountyClaimed,
+            bountyClaimedBy,
             pendingFinalOutcome: null,
           };
         }
@@ -196,10 +217,16 @@ function gameReducer(state, action) {
           phase: 'reveal',
           roundResult,
           lightningTarget: state.lightningTarget,
+          bountyClaimed,
+          bountyClaimedBy,
           pendingFinalOutcome: null,
         };
       }
 
+      const bountyClaimed = state.bountyClaimed || Boolean(roundResult.bountyHit);
+      const bountyClaimedBy = roundResult.bountyHit
+        ? roundResult.bountyWinners
+        : state.bountyClaimedBy;
       const teamScore = state.teamScore + roundResult.teamPoints;
       const roundHistory = [
         ...state.roundHistory,
@@ -214,6 +241,8 @@ function gameReducer(state, action) {
         teamScore,
         roundHistory,
         lightningTarget: null,
+        bountyClaimed,
+        bountyClaimedBy,
         currentPlayerIndex: 0,
         phase: 'reveal',
         roundResult,
@@ -255,6 +284,9 @@ function gameReducer(state, action) {
         teamScore: 0,
         roundHistory: [],
         lightningTarget: createLightningTarget(1, state.gameMode),
+        bountyNumber: createBountyNumber(state.gameMode),
+        bountyClaimed: false,
+        bountyClaimedBy: [],
         currentPlayerIndex: 0,
         round: 1,
         phase: 'input',
@@ -278,6 +310,9 @@ export default function App() {
     teamScore,
     roundHistory,
     lightningTarget,
+    bountyNumber,
+    bountyClaimed,
+    bountyClaimedBy,
     currentPlayerIndex,
     round,
     phase,
@@ -287,6 +322,8 @@ export default function App() {
   } = state;
 
   const isCompetitive = gameMode === GAME_MODES.COMPETITIVE;
+  const bountyActive = !bountyClaimed && Number.isInteger(bountyNumber);
+  const bountyMaxPick = bountyMaxPickForMode(gameMode);
   const lightningRound = isLightningRound(round, gameMode);
   const chaosRound = isChaosRound(round, gameMode);
   const coopJackpotRound =
@@ -369,7 +406,16 @@ export default function App() {
         <div className="app-input-flow">
           <div className="app-live-scoreboard">
             {isCompetitive ? (
-              <Scoreboard players={players} winScore={WIN_SCORE} compact />
+              <Scoreboard
+                players={players}
+                winScore={WIN_SCORE}
+                bountyActive={bountyActive}
+                bountyClaimed={bountyClaimed}
+                bountyClaimedBy={bountyClaimedBy}
+                bountyNumber={bountyNumber}
+                bountyMaxPick={bountyMaxPick}
+                compact
+              />
             ) : (
               <TeamScoreboard
                 teamScore={teamScore}
@@ -377,6 +423,12 @@ export default function App() {
                 maxRounds={MAX_ROUNDS}
                 jackpotRound={coopJackpotRound}
                 jackpotNeeded={jackpotNeeded}
+                bountyActive={bountyActive}
+                bountyClaimed={bountyClaimed}
+                bountyClaimedBy={bountyClaimedBy}
+                bountyNumber={bountyNumber}
+                players={players}
+                bountyMaxPick={bountyMaxPick}
                 compact
               />
             )}
@@ -400,7 +452,16 @@ export default function App() {
         <>
           <div className="app-live-scoreboard">
             {isCompetitive ? (
-              <Scoreboard players={players} winScore={WIN_SCORE} compact />
+              <Scoreboard
+                players={players}
+                winScore={WIN_SCORE}
+                bountyActive={bountyActive}
+                bountyClaimed={bountyClaimed}
+                bountyClaimedBy={bountyClaimedBy}
+                bountyNumber={bountyNumber}
+                bountyMaxPick={bountyMaxPick}
+                compact
+              />
             ) : (
               <TeamScoreboard
                 teamScore={teamScore}
@@ -408,6 +469,12 @@ export default function App() {
                 maxRounds={MAX_ROUNDS}
                 jackpotRound={coopJackpotRound}
                 jackpotNeeded={jackpotNeeded}
+                bountyActive={bountyActive}
+                bountyClaimed={bountyClaimed}
+                bountyClaimedBy={bountyClaimedBy}
+                bountyNumber={bountyNumber}
+                players={players}
+                bountyMaxPick={bountyMaxPick}
                 compact
               />
             )}

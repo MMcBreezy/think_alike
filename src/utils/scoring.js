@@ -1,4 +1,5 @@
 import {
+  BOUNTY_POINTS,
   CHAOS_SCORE_MULTIPLIER,
   COOP_CLOSE_POINTS,
   COOP_CLOSE_RANGE,
@@ -16,6 +17,72 @@ import {
   LIGHTNING_EXACT_POINTS,
   WIN_SCORE,
 } from './gameRules.js';
+
+function applyCoopBounty(players, teamPoints, { bountyNumber, bountyClaimed, maxPick }) {
+  if (bountyClaimed || !Number.isInteger(bountyNumber) || bountyNumber > maxPick) {
+    return {
+      teamPoints,
+      bountyHit: false,
+      bountyWinners: [],
+      bountyNumber: null,
+    };
+  }
+
+  const bountyWinners = [];
+  let bonus = 0;
+
+  for (const player of players) {
+    if (player.currentGuess === bountyNumber) {
+      bonus += BOUNTY_POINTS;
+      bountyWinners.push({ id: player.id, name: player.name });
+    }
+  }
+
+  return {
+    teamPoints: teamPoints + bonus,
+    bountyHit: bountyWinners.length > 0,
+    bountyWinners,
+    bountyNumber: bountyWinners.length > 0 ? bountyNumber : null,
+  };
+}
+
+function withCoopBounty(result, players, options) {
+  const { bountyNumber = null, bountyClaimed = false, maxPick = 50 } = options;
+  const bounty = applyCoopBounty(players, result.teamPoints ?? 0, {
+    bountyNumber,
+    bountyClaimed,
+    maxPick,
+  });
+
+  return {
+    ...result,
+    teamPoints: bounty.teamPoints,
+    bountyHit: bounty.bountyHit,
+    bountyWinners: bounty.bountyWinners,
+    bountyNumber: bounty.bountyNumber,
+  };
+}
+
+function applyCompetitiveBounty(players, roundDeltas, { bountyNumber, bountyClaimed, maxPick }) {
+  if (bountyClaimed || !Number.isInteger(bountyNumber) || bountyNumber > maxPick) {
+    return { bountyHit: false, bountyWinners: [], bountyNumber: null };
+  }
+
+  const bountyWinners = [];
+
+  for (const player of players) {
+    if (player.currentGuess === bountyNumber) {
+      roundDeltas[player.id] = (roundDeltas[player.id] ?? 0) + BOUNTY_POINTS;
+      bountyWinners.push({ id: player.id, name: player.name });
+    }
+  }
+
+  return {
+    bountyHit: bountyWinners.length > 0,
+    bountyWinners,
+    bountyNumber: bountyWinners.length > 0 ? bountyNumber : null,
+  };
+}
 
 export function calculateMatches(players) {
   const byGuess = new Map();
@@ -40,7 +107,8 @@ function scoreCompetitiveMatch(size, chaosRound = false) {
   return chaosRound ? size * CHAOS_SCORE_MULTIPLIER : size;
 }
 
-export function calculateLightningScore(players, lightningTarget) {
+export function calculateLightningScore(players, lightningTarget, options = {}) {
+  const { bountyNumber = null, bountyClaimed = false, maxPick = 10 } = options;
   const roundDeltas = Object.fromEntries(players.map((player) => [player.id, 0]));
 
   for (const player of players) {
@@ -53,6 +121,12 @@ export function calculateLightningScore(players, lightningTarget) {
       roundDeltas[player.id] = LIGHTNING_CLOSE_POINTS;
     }
   }
+
+  const bountyResult = applyCompetitiveBounty(players, roundDeltas, {
+    bountyNumber,
+    bountyClaimed,
+    maxPick,
+  });
 
   const updatedPlayers = players.map((player) => ({
     ...player,
@@ -76,14 +150,26 @@ export function calculateLightningScore(players, lightningTarget) {
     roundDeltas,
     feedback,
     lightningTarget,
+    ...bountyResult,
   };
 }
 
 export function calculateCompetitiveScore(players, options = {}) {
-  const { chaosRound = false, lightningRound = false, lightningTarget = null } = options;
+  const {
+    chaosRound = false,
+    lightningRound = false,
+    lightningTarget = null,
+    bountyNumber = null,
+    bountyClaimed = false,
+    maxPick = 50,
+  } = options;
 
   if (lightningRound && Number.isInteger(lightningTarget)) {
-    return calculateLightningScore(players, lightningTarget);
+    return calculateLightningScore(players, lightningTarget, {
+      bountyNumber,
+      bountyClaimed,
+      maxPick,
+    });
   }
 
   const matches = calculateMatches(players);
@@ -95,6 +181,12 @@ export function calculateCompetitiveScore(players, options = {}) {
       roundDeltas[playerId] = points;
     }
   }
+
+  const bountyResult = applyCompetitiveBounty(players, roundDeltas, {
+    bountyNumber,
+    bountyClaimed,
+    maxPick,
+  });
 
   const updatedPlayers = players.map((player) => ({
     ...player,
@@ -113,10 +205,11 @@ export function calculateCompetitiveScore(players, options = {}) {
     roundDeltas,
     feedback,
     matches,
+    ...bountyResult,
   };
 }
 
-function calculateCoopLightningScore(players, lightningTarget) {
+function calculateCoopLightningScore(players, lightningTarget, options = {}) {
   let teamPoints = 0;
   let anyExact = false;
   let anyClose = false;
@@ -138,15 +231,19 @@ function calculateCoopLightningScore(players, lightningTarget) {
   if (anyExact) feedback = 'lightning-hit';
   else if (anyClose) feedback = 'lightning-close';
 
-  return {
-    mode: GAME_MODES.COOP,
-    teamPoints,
-    feedback,
-    distance: null,
-    lightningTarget,
-    lightningRound: true,
-    jackpotRound: false,
-  };
+  return withCoopBounty(
+    {
+      mode: GAME_MODES.COOP,
+      teamPoints,
+      feedback,
+      distance: null,
+      lightningTarget,
+      lightningRound: true,
+      jackpotRound: false,
+    },
+    players,
+    options
+  );
 }
 
 export function calculateCoopScore(players, options = {}) {
@@ -155,6 +252,9 @@ export function calculateCoopScore(players, options = {}) {
     jackpotRound = false,
     lightningRound = false,
     lightningTarget = null,
+    bountyNumber = null,
+    bountyClaimed = false,
+    maxPick = 50,
     teamScore = 0,
     winScore = WIN_SCORE,
   } = options;
@@ -179,97 +279,129 @@ export function calculateCoopScore(players, options = {}) {
     const jackpotPoints = Math.max(0, winScore - teamScore);
 
     if (distance === 0) {
-      return {
-        mode: GAME_MODES.COOP,
-        teamPoints: jackpotPoints,
-        feedback: 'jackpot-sync',
-        distance,
-        jackpotRound: true,
-        jackpotPoints,
-        jackpotRange: COOP_FINAL_SYNC_MAX_PICK,
-      };
+      return withCoopBounty(
+        {
+          mode: GAME_MODES.COOP,
+          teamPoints: jackpotPoints,
+          feedback: 'jackpot-sync',
+          distance,
+          jackpotRound: true,
+          jackpotPoints,
+          jackpotRange: COOP_FINAL_SYNC_MAX_PICK,
+        },
+        players,
+        options
+      );
     }
 
     if (distance <= COOP_FINAL_SYNC_NEAR_RANGE) {
-      return {
-        mode: GAME_MODES.COOP,
-        teamPoints: COOP_FINAL_SYNC_NEAR_POINTS,
-        feedback: 'jackpot-near',
-        distance,
-        jackpotRound: true,
-        jackpotPoints,
-        jackpotRange: COOP_FINAL_SYNC_MAX_PICK,
-      };
+      return withCoopBounty(
+        {
+          mode: GAME_MODES.COOP,
+          teamPoints: COOP_FINAL_SYNC_NEAR_POINTS,
+          feedback: 'jackpot-near',
+          distance,
+          jackpotRound: true,
+          jackpotPoints,
+          jackpotRange: COOP_FINAL_SYNC_MAX_PICK,
+        },
+        players,
+        options
+      );
     }
 
     if (distance <= COOP_FINAL_SYNC_CLOSE_RANGE) {
-      return {
+      return withCoopBounty(
+        {
+          mode: GAME_MODES.COOP,
+          teamPoints: COOP_FINAL_SYNC_CLOSE_POINTS,
+          feedback: 'jackpot-close',
+          distance,
+          jackpotRound: true,
+          jackpotPoints,
+          jackpotRange: COOP_FINAL_SYNC_MAX_PICK,
+        },
+        players,
+        options
+      );
+    }
+
+    return withCoopBounty(
+      {
         mode: GAME_MODES.COOP,
-        teamPoints: COOP_FINAL_SYNC_CLOSE_POINTS,
-        feedback: 'jackpot-close',
+        teamPoints: 0,
+        feedback: 'jackpot-miss',
         distance,
         jackpotRound: true,
         jackpotPoints,
         jackpotRange: COOP_FINAL_SYNC_MAX_PICK,
-      };
-    }
-
-    return {
-      mode: GAME_MODES.COOP,
-      teamPoints: 0,
-      feedback: 'jackpot-miss',
-      distance,
-      jackpotRound: true,
-      jackpotPoints,
-      jackpotRange: COOP_FINAL_SYNC_MAX_PICK,
-    };
+      },
+      players,
+      options
+    );
   }
 
   if (lightningRound && Number.isInteger(lightningTarget)) {
-    return calculateCoopLightningScore(players, lightningTarget);
+    return calculateCoopLightningScore(players, lightningTarget, options);
   }
 
   if (distance === 0) {
-    return {
-      mode: GAME_MODES.COOP,
-      teamPoints: applyChaosPoints(COOP_EXACT_POINTS),
-      feedback: 'perfect-sync',
-      distance,
-      jackpotRound: false,
-      lightningRound: false,
-    };
+    return withCoopBounty(
+      {
+        mode: GAME_MODES.COOP,
+        teamPoints: applyChaosPoints(COOP_EXACT_POINTS),
+        feedback: 'perfect-sync',
+        distance,
+        jackpotRound: false,
+        lightningRound: false,
+      },
+      players,
+      options
+    );
   }
 
   if (distance <= COOP_NEAR_RANGE) {
-    return {
-      mode: GAME_MODES.COOP,
-      teamPoints: applyChaosPoints(COOP_NEAR_POINTS),
-      feedback: 'close-sync',
-      distance,
-      jackpotRound: false,
-      lightningRound: false,
-    };
+    return withCoopBounty(
+      {
+        mode: GAME_MODES.COOP,
+        teamPoints: applyChaosPoints(COOP_NEAR_POINTS),
+        feedback: 'close-sync',
+        distance,
+        jackpotRound: false,
+        lightningRound: false,
+      },
+      players,
+      options
+    );
   }
 
   if (distance <= COOP_CLOSE_RANGE) {
-    return {
+    return withCoopBounty(
+      {
+        mode: GAME_MODES.COOP,
+        teamPoints: applyChaosPoints(COOP_CLOSE_POINTS),
+        feedback: 'close-sync',
+        distance,
+        jackpotRound: false,
+        lightningRound: false,
+      },
+      players,
+      options
+    );
+  }
+
+  return withCoopBounty(
+    {
       mode: GAME_MODES.COOP,
-      teamPoints: applyChaosPoints(COOP_CLOSE_POINTS),
-      feedback: 'close-sync',
+      teamPoints: 0,
+      feedback: 'no-sync',
       distance,
       jackpotRound: false,
       lightningRound: false,
-    };
-  }
-
-  return {
-    mode: GAME_MODES.COOP,
-    teamPoints: 0,
-    feedback: 'no-sync',
-    distance,
-    jackpotRound: false,
-    lightningRound: false,
-  };
+    },
+    players,
+    options
+  );
 }
 
 export function calculateRoundResults(players, gameMode, options = {}) {

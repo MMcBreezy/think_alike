@@ -1,17 +1,130 @@
+import { BOUNTY_MAX_PICK, BOUNTY_POINTS } from '../utils/gameRules.js';
 import './Scoreboard.css';
 
-export function Scoreboard({ players, winScore, compact = false }) {
+export function shouldRevealBountyForTesting() {
+  if (import.meta.env.DEV) return true;
+  try {
+    return localStorage.getItem('thinkAlikeShowBounty') === '1';
+  } catch {
+    return false;
+  }
+}
+
+export function BountyTestHint({ bountyNumber }) {
+  if (!shouldRevealBountyForTesting() || !Number.isInteger(bountyNumber)) return null;
+
+  return (
+    <p className="scoreboard-bounty scoreboard-bounty--dev" aria-label="Testing only">
+      Test: bounty number is {bountyNumber}
+    </p>
+  );
+}
+
+function playerColorIndex(players, playerId, fallbackIndex = 0) {
+  const index = players.findIndex((player) => player.id === playerId);
+  return (index >= 0 ? index : fallbackIndex) % 6;
+}
+
+export function BountyClaimants({ claimants, players }) {
+  if (!claimants.length) return null;
+
+  return claimants.map((claimant, index) => {
+    const colorIndex = playerColorIndex(players, claimant.id, index);
+    const separator =
+      index === 0
+        ? null
+        : index === claimants.length - 1
+          ? claimants.length > 2
+            ? ', and '
+            : ' and '
+          : ', ';
+
+    return (
+      <span key={claimant.id}>
+        {separator}
+        <span
+          className={`scoreboard-bounty-name scoreboard-bounty-name--color--${colorIndex}`}
+        >
+          {claimant.name}
+        </span>
+      </span>
+    );
+  });
+}
+
+export function Scoreboard({
+  players,
+  winScore,
+  bountyActive = false,
+  bountyClaimed = false,
+  bountyClaimedBy = [],
+  bountyNumber = null,
+  bountyMaxPick = BOUNTY_MAX_PICK,
+  compact = false,
+}) {
+  const bountyNote = (() => {
+    if (bountyActive) {
+      return (
+        <>
+          <p className="scoreboard-bounty scoreboard-bounty--active">
+            Bounty active — pick a secret number (1-{bountyMaxPick}) for +{BOUNTY_POINTS}
+          </p>
+          <BountyTestHint bountyNumber={bountyNumber} />
+        </>
+      );
+    }
+
+    if (bountyClaimed && Number.isInteger(bountyNumber)) {
+      return (
+        <p className="scoreboard-bounty">
+          Bounty was {bountyNumber}
+          {bountyClaimedBy.length > 0 ? (
+            <>
+              {' '}
+              — claimed by <BountyClaimants claimants={bountyClaimedBy} players={players} />
+            </>
+          ) : (
+            ' — claimed'
+          )}
+        </p>
+      );
+    }
+
+    if (bountyClaimed) {
+      return (
+        <p className="scoreboard-bounty">
+          {bountyClaimedBy.length > 0 ? (
+            <>
+              Bounty claimed by{' '}
+              <BountyClaimants claimants={bountyClaimedBy} players={players} />
+            </>
+          ) : (
+            'Bounty claimed'
+          )}
+        </p>
+      );
+    }
+
+    return null;
+  })();
+
   return (
     <div className={`scoreboard${compact ? ' scoreboard--compact' : ''}`}>
       <h3 className="scoreboard-title">Scoreboard</h3>
+      {bountyNote}
       <ul className="scoreboard-list">
         {players.map((p) => {
           const pct =
             winScore > 0 ? Math.min(100, Math.max(0, (p.score / winScore) * 100)) : 0;
+          const colorIndex = playerColorIndex(players, p.id);
           return (
             <li key={p.id} className="scoreboard-row">
               <div className="scoreboard-row-top">
-                <span className="scoreboard-name">{p.name}</span>
+                <span
+                  className={`scoreboard-name scoreboard-name--color--${colorIndex}`}
+                >
+                  {p.name}
+                </span>
                 <span className="scoreboard-fraction">
                   {p.score} / {winScore}
                 </span>

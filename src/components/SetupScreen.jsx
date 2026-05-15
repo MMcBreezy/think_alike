@@ -90,7 +90,7 @@ export function SetupScreen({ onStart }) {
             onClick={() => selectMode(GAME_MODES.COOP)}
           >
             <span className="setup-mode-title">Co-op</span>
-            <span className="setup-mode-copy">2 players · reach 20 in 10 rounds · lightning on 6</span>
+            <span className="setup-mode-copy">2 players · reach 20 in 10 rounds · bounty · lightning on 6</span>
           </button>
         </div>
 
