@@ -1,4 +1,4 @@
-import { useCallback, useReducer } from 'react';
+import { useCallback, useReducer, useState } from 'react';
 import './App.css';
 import { AppMenu } from './components/AppMenu.jsx';
 import { SetupScreen } from './components/SetupScreen.jsx';
@@ -20,6 +20,7 @@ import {
   maxPickForRound,
 } from './utils/gameRules.js';
 import { calculateRoundResults } from './utils/scoring.js';
+import { readShowBountyForTesting, writeShowBountyForTesting } from './utils/devPreferences.js';
 
 function createPlayer(name, index, gameMode) {
   const basePlayer = {
@@ -304,6 +305,7 @@ function gameReducer(state, action) {
 
 export default function App() {
   const [state, dispatch] = useReducer(gameReducer, initialState);
+  const [showBountyForTesting, setShowBountyForTesting] = useState(readShowBountyForTesting);
   const {
     gameMode,
     players,
@@ -361,10 +363,19 @@ export default function App() {
     dispatch({ type: 'NEW_GAME' });
   }, []);
 
+  const toggleShowBountyForTesting = useCallback(() => {
+    setShowBountyForTesting((on) => {
+      const next = !on;
+      writeShowBountyForTesting(next);
+      return next;
+    });
+  }, []);
+
   const winner = winnerId ? players.find((p) => p.id === winnerId) : null;
   const winnerThemeIndex = winner ? players.findIndex((p) => p.id === winner.id) : -1;
 
-  const showGameMenu = phase !== 'setup' && players.length > 0;
+  const showAppMenu = phase === 'setup' || players.length > 0;
+  const showMatchMenuActions = phase !== 'setup' && players.length > 0;
   const showRoundBadge = phase !== 'setup' && phase !== 'winner' && phase !== 'loser';
   const turnThemeClass =
     phase === 'input' && players.length > 0 ? ` app--turn--${currentPlayerIndex % 6}` : '';
@@ -378,11 +389,14 @@ export default function App() {
       className={`app${phase === 'setup' ? ' app--setup' : ''}${phase === 'input' ? ' app--input-play' : ''}${turnThemeClass}`}
     >
       <header
-        className={`app-header${phase === 'input' ? ' app-header--tight' : ''}${showGameMenu ? ' app-header--has-menu' : ''}`}
+        className={`app-header${phase === 'input' ? ' app-header--tight' : ''}${showAppMenu ? ' app-header--has-menu' : ''}`}
       >
-        {showGameMenu && (
+        {showAppMenu && (
           <AppMenu
             gameMode={gameMode}
+            showMatchActions={showMatchMenuActions}
+            showBountyForTesting={showBountyForTesting}
+            onToggleShowBounty={toggleShowBountyForTesting}
             onResetMatch={playAgain}
             onQuitToSetup={newGame}
           />
@@ -414,6 +428,7 @@ export default function App() {
                 bountyClaimedBy={bountyClaimedBy}
                 bountyNumber={bountyNumber}
                 bountyMaxPick={bountyMaxPick}
+                showBountyForTesting={showBountyForTesting}
                 compact
               />
             ) : (
@@ -429,6 +444,7 @@ export default function App() {
                 bountyNumber={bountyNumber}
                 players={players}
                 bountyMaxPick={bountyMaxPick}
+                showBountyForTesting={showBountyForTesting}
                 compact
               />
             )}
@@ -460,6 +476,7 @@ export default function App() {
                 bountyClaimedBy={bountyClaimedBy}
                 bountyNumber={bountyNumber}
                 bountyMaxPick={bountyMaxPick}
+                showBountyForTesting={showBountyForTesting}
                 compact
               />
             ) : (
@@ -475,6 +492,7 @@ export default function App() {
                 bountyNumber={bountyNumber}
                 players={players}
                 bountyMaxPick={bountyMaxPick}
+                showBountyForTesting={showBountyForTesting}
                 compact
               />
             )}

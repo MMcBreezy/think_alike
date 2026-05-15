@@ -1,17 +1,8 @@
 import { BOUNTY_MAX_PICK, BOUNTY_POINTS } from '../utils/gameRules.js';
 import './Scoreboard.css';
 
-export function shouldRevealBountyForTesting() {
-  if (import.meta.env.DEV) return true;
-  try {
-    return localStorage.getItem('thinkAlikeShowBounty') === '1';
-  } catch {
-    return false;
-  }
-}
-
-export function BountyTestHint({ bountyNumber }) {
-  if (!shouldRevealBountyForTesting() || !Number.isInteger(bountyNumber)) return null;
+export function BountyTestHint({ bountyNumber, showBountyForTesting = false }) {
+  if (!showBountyForTesting || !Number.isInteger(bountyNumber)) return null;
 
   return (
     <p className="scoreboard-bounty scoreboard-bounty--dev" aria-label="Testing only">
@@ -60,6 +51,7 @@ export function Scoreboard({
   bountyClaimedBy = [],
   bountyNumber = null,
   bountyMaxPick = BOUNTY_MAX_PICK,
+  showBountyForTesting = false,
   compact = false,
 }) {
   const bountyNote = (() => {
@@ -69,7 +61,10 @@ export function Scoreboard({
           <p className="scoreboard-bounty scoreboard-bounty--active">
             Bounty active — pick a secret number (1-{bountyMaxPick}) for +{BOUNTY_POINTS}
           </p>
-          <BountyTestHint bountyNumber={bountyNumber} />
+          <BountyTestHint
+            bountyNumber={bountyNumber}
+            showBountyForTesting={showBountyForTesting}
+          />
         </>
       );
     }

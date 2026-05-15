@@ -15,6 +15,7 @@ export function TeamScoreboard({
   bountyNumber = null,
   players = [],
   bountyMaxPick = BOUNTY_MAX_PICK_COOP,
+  showBountyForTesting = false,
   compact = false,
 }) {
   const pct = winScore > 0 ? Math.min(100, Math.max(0, (teamScore / winScore) * 100)) : 0;
@@ -27,7 +28,10 @@ export function TeamScoreboard({
             Bounty active — pick a secret number (1-{bountyMaxPick}) for +{BOUNTY_POINTS} team
             points each
           </p>
-          <BountyTestHint bountyNumber={bountyNumber} />
+          <BountyTestHint
+            bountyNumber={bountyNumber}
+            showBountyForTesting={showBountyForTesting}
+          />
         </>
       );
     }

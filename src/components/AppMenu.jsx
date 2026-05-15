@@ -2,8 +2,16 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import './AppMenu.css';
 import { GAME_MODES } from '../utils/gameRules.js';
 
-export function AppMenu({ gameMode, onResetMatch, onQuitToSetup }) {
+export function AppMenu({
+  gameMode,
+  showMatchActions = true,
+  showBountyForTesting = false,
+  onToggleShowBounty,
+  onResetMatch,
+  onQuitToSetup,
+}) {
   const [open, setOpen] = useState(false);
+  const [devOpen, setDevOpen] = useState(false);
   const rootRef = useRef(null);
 
   const close = useCallback(() => setOpen(false), []);
@@ -47,6 +55,10 @@ export function AppMenu({ gameMode, onResetMatch, onQuitToSetup }) {
     close();
   }, [close, onQuitToSetup]);
 
+  const handleToggleShowBounty = useCallback(() => {
+    onToggleShowBounty?.();
+  }, [onToggleShowBounty]);
+
   return (
     <div className="app-menu" ref={rootRef}>
       <button
@@ -62,12 +74,59 @@ export function AppMenu({ gameMode, onResetMatch, onQuitToSetup }) {
       </button>
       {open && (
         <div id="app-menu-dropdown" className="app-menu-dropdown" role="menu">
-          <button type="button" className="app-menu-item" role="menuitem" onClick={handleReset}>
-            Reset match
-          </button>
-          <button type="button" className="app-menu-item app-menu-item--danger" role="menuitem" onClick={handleQuit}>
-            Quit to setup
-          </button>
+          <div
+            className={`app-menu-section app-menu-section--collapsible${devOpen ? ' app-menu-section--open' : ''}`}
+            role="presentation"
+          >
+            <button
+              type="button"
+              className="app-menu-section-trigger"
+              aria-expanded={devOpen}
+              aria-controls="app-menu-dev-panel"
+              onClick={() => setDevOpen((expanded) => !expanded)}
+            >
+              <span className="app-menu-section-label">Developer</span>
+              <span className="app-menu-chevron" aria-hidden />
+            </button>
+            <div
+              id="app-menu-dev-panel"
+              className="app-menu-section-panel"
+              hidden={!devOpen}
+            >
+              <div className="app-menu-section-panel-inner">
+                <label
+                  className="app-menu-toggle"
+                  role="menuitemcheckbox"
+                  aria-checked={showBountyForTesting}
+                >
+                  <input
+                    type="checkbox"
+                    className="app-menu-toggle-input"
+                    checked={showBountyForTesting}
+                    onChange={handleToggleShowBounty}
+                  />
+                  <span className="app-menu-toggle-box" aria-hidden />
+                  <span className="app-menu-toggle-label">Show bounty number</span>
+                </label>
+              </div>
+            </div>
+          </div>
+          {showMatchActions && (
+            <>
+              <div className="app-menu-divider" role="separator" />
+              <button type="button" className="app-menu-item" role="menuitem" onClick={handleReset}>
+                Reset match
+              </button>
+              <button
+                type="button"
+                className="app-menu-item app-menu-item--danger"
+                role="menuitem"
+                onClick={handleQuit}
+              >
+                Quit to setup
+              </button>
+            </>
+          )}
         </div>
       )}
     </div>
