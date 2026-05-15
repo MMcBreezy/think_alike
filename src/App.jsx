@@ -75,6 +75,9 @@ function getCoopFeedbackLabel(feedback) {
   if (feedback === 'jackpot-near') return 'So close!';
   if (feedback === 'jackpot-close') return 'Almost there';
   if (feedback === 'jackpot-miss') return 'Jackpot missed';
+  if (feedback === 'lightning-hit') return 'Bullseye!';
+  if (feedback === 'lightning-close') return 'Close Calls!';
+  if (feedback === 'lightning-miss') return 'No Lightning Hits';
   return 'No Sync this round';
 }
 
@@ -82,6 +85,7 @@ function createCoopRoundHistoryEntry(round, players, roundResult, teamScoreAfter
   return {
     round,
     chaosRound,
+    lightningRound: Boolean(roundResult.lightningRound),
     jackpotRound: Boolean(roundResult.jackpotRound),
     feedback: roundResult.feedback,
     feedbackLabel: getCoopFeedbackLabel(roundResult.feedback),
@@ -327,9 +331,7 @@ export default function App() {
   const showRoundBadge = phase !== 'setup' && phase !== 'winner' && phase !== 'loser';
   const turnThemeClass =
     phase === 'input' && players.length > 0 ? ` app--turn--${currentPlayerIndex % 6}` : '';
-  const appSub = isCompetitive
-    ? `Match minds. First to ${WIN_SCORE} wins.`
-    : `Match minds together. Reach ${WIN_SCORE} in ${MAX_ROUNDS} rounds.`;
+  const appSub = 'Great minds think alike';
   const roundBadgeLabel = isCompetitive
     ? `Round ${round}${lightningRound ? ' · Lightning' : chaosRound ? ' · Chaos' : ''}`
     : `Round ${round} / ${MAX_ROUNDS}${coopJackpotRound ? ' · Final Sync Jackpot' : chaosRound ? ' · Chaos' : ''}`;

@@ -70,6 +70,18 @@ export function RevealPhase({
       >
         {sorted.map((p, index) => {
           const roundDelta = roundResult?.roundDeltas?.[p.id] ?? 0;
+          const lightningTargetValue =
+            lightningTarget ?? roundResult?.lightningTarget ?? null;
+          const lightningDistance =
+            lightningRound && Number.isInteger(lightningTargetValue)
+              ? Math.abs(p.currentGuess - lightningTargetValue)
+              : null;
+          const lightningPoints =
+            lightningDistance === 0
+              ? LIGHTNING_EXACT_POINTS
+              : lightningDistance != null && lightningDistance <= LIGHTNING_CLOSE_RANGE
+                ? LIGHTNING_CLOSE_POINTS
+                : 0;
 
           return (
             <li key={p.id} className="reveal-card">
@@ -86,6 +98,17 @@ export function RevealPhase({
                   className={`reveal-card-delta ${roundDelta > 0 ? 'is-pos' : 'is-zero'}`}
                 >
                   {roundDelta > 0 ? `+${roundDelta} this round` : '+0 this round'}
+                </span>
+              )}
+              {!isCompetitive && lightningRound && (
+                <span
+                  className={`reveal-card-delta ${lightningPoints > 0 ? 'is-pos' : 'is-zero'}`}
+                >
+                  {lightningDistance === 0
+                    ? 'Exact hit'
+                    : lightningDistance != null
+                      ? `Off by ${lightningDistance}`
+                      : '+0 this round'}
                 </span>
               )}
             </li>
@@ -117,7 +140,9 @@ export function RevealPhase({
               className={`reveal-callout ${
                 feedback === 'perfect-sync' ||
                 feedback === 'close-sync' ||
-                feedback === 'jackpot-sync'
+                feedback === 'jackpot-sync' ||
+                feedback === 'lightning-hit' ||
+                feedback === 'lightning-close'
                   ? 'reveal-callout-celebrate'
                   : 'reveal-callout-muted'
               }`}
@@ -128,6 +153,9 @@ export function RevealPhase({
               {feedback === 'jackpot-near' && 'So close!'}
               {feedback === 'jackpot-close' && 'Almost there'}
               {feedback === 'jackpot-miss' && 'Jackpot missed'}
+              {feedback === 'lightning-hit' && 'Bullseye!'}
+              {feedback === 'lightning-close' && 'Close Calls!'}
+              {feedback === 'lightning-miss' && 'No Lightning Hits'}
               {feedback === 'no-sync' && 'No Sync this round'}
             </p>
             <p className={`reveal-team-points ${teamPoints > 0 ? 'is-pos' : 'is-zero'}`}>

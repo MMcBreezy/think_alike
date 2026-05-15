@@ -33,15 +33,15 @@ export const COOP_FINAL_SYNC_CLOSE_RANGE = 3;
 export const COOP_FINAL_SYNC_NEAR_POINTS = 2;
 export const COOP_FINAL_SYNC_CLOSE_POINTS = 1;
 
-export function isLightningRound(round, gameMode = GAME_MODES.COMPETITIVE) {
-  return gameMode === GAME_MODES.COMPETITIVE && round > 0 && round % LIGHTNING_ROUND_EVERY === 0;
+export function isLightningRound(round) {
+  return round > 0 && round % LIGHTNING_ROUND_EVERY === 0;
 }
 
 export function isChaosRound(round, gameMode = GAME_MODES.COMPETITIVE) {
   if (round <= 0) return false;
+  if (isLightningRound(round, gameMode)) return false;
   if (gameMode === GAME_MODES.COMPETITIVE) {
-    // Lightning rounds replace chaos behavior when both cadences overlap.
-    return !isLightningRound(round, gameMode) && round % COMPETITIVE_CHAOS_ROUND_EVERY === 0;
+    return round % COMPETITIVE_CHAOS_ROUND_EVERY === 0;
   }
   return round % COOP_CHAOS_ROUND_EVERY === 0;
 }

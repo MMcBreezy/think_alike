@@ -116,8 +116,48 @@ export function calculateCompetitiveScore(players, options = {}) {
   };
 }
 
+function calculateCoopLightningScore(players, lightningTarget) {
+  let teamPoints = 0;
+  let anyExact = false;
+  let anyClose = false;
+
+  for (const player of players) {
+    const distance = Math.abs(player.currentGuess - lightningTarget);
+    if (distance === 0) {
+      teamPoints += LIGHTNING_EXACT_POINTS;
+      anyExact = true;
+      continue;
+    }
+    if (distance <= LIGHTNING_CLOSE_RANGE) {
+      teamPoints += LIGHTNING_CLOSE_POINTS;
+      anyClose = true;
+    }
+  }
+
+  let feedback = 'lightning-miss';
+  if (anyExact) feedback = 'lightning-hit';
+  else if (anyClose) feedback = 'lightning-close';
+
+  return {
+    mode: GAME_MODES.COOP,
+    teamPoints,
+    feedback,
+    distance: null,
+    lightningTarget,
+    lightningRound: true,
+    jackpotRound: false,
+  };
+}
+
 export function calculateCoopScore(players, options = {}) {
-  const { chaosRound = false, jackpotRound = false, teamScore = 0, winScore = WIN_SCORE } = options;
+  const {
+    chaosRound = false,
+    jackpotRound = false,
+    lightningRound = false,
+    lightningTarget = null,
+    teamScore = 0,
+    winScore = WIN_SCORE,
+  } = options;
   const applyChaosPoints = (basePoints) =>
     chaosRound ? basePoints * CHAOS_SCORE_MULTIPLIER : basePoints;
 
@@ -185,6 +225,10 @@ export function calculateCoopScore(players, options = {}) {
     };
   }
 
+  if (lightningRound && Number.isInteger(lightningTarget)) {
+    return calculateCoopLightningScore(players, lightningTarget);
+  }
+
   if (distance === 0) {
     return {
       mode: GAME_MODES.COOP,
@@ -192,6 +236,7 @@ export function calculateCoopScore(players, options = {}) {
       feedback: 'perfect-sync',
       distance,
       jackpotRound: false,
+      lightningRound: false,
     };
   }
 
@@ -202,6 +247,7 @@ export function calculateCoopScore(players, options = {}) {
       feedback: 'close-sync',
       distance,
       jackpotRound: false,
+      lightningRound: false,
     };
   }
 
@@ -212,6 +258,7 @@ export function calculateCoopScore(players, options = {}) {
       feedback: 'close-sync',
       distance,
       jackpotRound: false,
+      lightningRound: false,
     };
   }
 
@@ -221,6 +268,7 @@ export function calculateCoopScore(players, options = {}) {
     feedback: 'no-sync',
     distance,
     jackpotRound: false,
+    lightningRound: false,
   };
 }
 
