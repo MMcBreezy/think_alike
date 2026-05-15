@@ -248,9 +248,73 @@ export async function playAirhornSound() {
 export function isNumberMatchFeedback(feedback, gameMode) {
   if (!feedback) return false;
   if (gameMode === GAME_MODES.COMPETITIVE) {
-    return feedback === 'perfect' || feedback === 'comeback-lightning-hit';
+    return (
+      feedback === 'perfect' ||
+      feedback === 'match' ||
+      feedback === 'comeback-lightning-hit'
+    );
   }
   return feedback === 'perfect-sync' || feedback === 'jackpot-sync';
+}
+
+/** Competitive reveal sounds (normal match rounds + lightning + comeback lightning). */
+export function feedbackCompetitiveReveal(feedback) {
+  if (!feedback) return;
+  if (
+    feedback === 'no-match' ||
+    feedback === 'lightning-miss' ||
+    feedback === 'comeback-lightning-miss'
+  ) {
+    return;
+  }
+  if (
+    feedback === 'perfect' ||
+    feedback === 'match' ||
+    feedback === 'lightning-hit' ||
+    feedback === 'comeback-lightning-hit'
+  ) {
+    feedbackNumberMatch();
+    return;
+  }
+  if (feedback === 'lightning-close' || feedback === 'comeback-lightning-close') {
+    vibrate([8, 22, 12]);
+    void playLightningCloseRevealSound();
+  }
+}
+
+/** Bounty tone waits briefly after any celebrate / close-call reveal sound in competitive. */
+export function competitiveRevealDelaysBounty(feedback) {
+  if (!feedback) return false;
+  return (
+    feedback === 'perfect' ||
+    feedback === 'match' ||
+    feedback === 'lightning-hit' ||
+    feedback === 'lightning-close' ||
+    feedback === 'comeback-lightning-hit' ||
+    feedback === 'comeback-lightning-close'
+  );
+}
+
+export async function playLightningCloseRevealSound() {
+  if (!isSoundAudible()) return;
+  const ctx = await getAudioContext();
+  if (!ctx) return;
+
+  const now = ctx.currentTime;
+  connectTone(ctx, {
+    startTime: now,
+    duration: 0.22,
+    frequency: 587.33,
+    type: 'sine',
+    peakGain: 0.09,
+  });
+  connectTone(ctx, {
+    startTime: now + 0.12,
+    duration: 0.28,
+    frequency: 783.99,
+    type: 'triangle',
+    peakGain: 0.085,
+  });
 }
 
 export async function playNumberMatchSound() {

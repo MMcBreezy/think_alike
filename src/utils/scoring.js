@@ -245,10 +245,13 @@ export function calculateCompetitiveScore(players, options = {}) {
     score: player.score + (roundDeltas[player.id] ?? 0),
   }));
 
-  let feedback = null;
-  if (matches.length === 0) feedback = 'no-match';
-  if (matches.length === 1 && matches[0].size === players.length && players.length >= 2) {
-    feedback = 'perfect';
+  let feedback = 'no-match';
+  if (matches.length > 0) {
+    if (matches.length === 1 && matches[0].size === players.length && players.length >= 2) {
+      feedback = 'perfect';
+    } else {
+      feedback = 'match';
+    }
   }
 
   return {

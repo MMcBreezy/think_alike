@@ -20,6 +20,8 @@ import {
 } from '../utils/gameRules.js';
 import {
   feedbackBountyClaim,
+  feedbackCompetitiveReveal,
+  competitiveRevealDelaysBounty,
   feedbackNumberMatch,
   isNumberMatchFeedback,
 } from '../utils/gameFeedback.js';
@@ -117,7 +119,12 @@ export function RevealPhase({
   }, [cardsRevealed, onCardsRevealed]);
 
   useEffect(() => {
-    if (!showCallout || !isNumberMatchFeedback(feedback, gameMode)) return;
+    if (!showCallout) return;
+    if (gameMode === GAME_MODES.COMPETITIVE) {
+      feedbackCompetitiveReveal(feedback);
+      return;
+    }
+    if (!isNumberMatchFeedback(feedback, gameMode)) return;
     feedbackNumberMatch();
   }, [showCallout, feedback, gameMode, revealKey]);
 
@@ -127,7 +134,11 @@ export function RevealPhase({
   useEffect(() => {
     if (!showCallout || !bountyClaimedThisRound) return undefined;
 
-    const delayMs = isNumberMatchFeedback(feedback, gameMode) ? 480 : 0;
+    const delayMs =
+      (gameMode === GAME_MODES.COMPETITIVE && competitiveRevealDelaysBounty(feedback)) ||
+      isNumberMatchFeedback(feedback, gameMode)
+        ? 480
+        : 0;
     const timer = window.setTimeout(() => feedbackBountyClaim(), delayMs);
     return () => window.clearTimeout(timer);
   }, [showCallout, bountyClaimedThisRound, feedback, gameMode, revealKey]);
@@ -149,6 +160,13 @@ export function RevealPhase({
       return (
         <p className="reveal-callout reveal-callout-celebrate">Perfect Match!</p>
       );
+    }
+    if (isCompetitive && !lightningRound && !comebackLightningRound && feedback === 'match') {
+      const sizes = roundResult?.matches?.map((m) => m.size) ?? [];
+      const biggest = sizes.length ? Math.max(...sizes) : 2;
+      const label =
+        biggest >= 4 ? `${biggest}-player match!` : biggest === 3 ? 'Triple match!' : 'Pair match!';
+      return <p className="reveal-callout reveal-callout-celebrate">{label}</p>;
     }
     if (isCompetitive && lightningRound && feedback === 'lightning-hit') {
       return <p className="reveal-callout reveal-callout-celebrate">Bullseye!</p>;
