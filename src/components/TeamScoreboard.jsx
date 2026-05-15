@@ -1,4 +1,6 @@
+import { useEffect, useState } from 'react';
 import { BOUNTY_MAX_PICK_COOP, BOUNTY_POINTS } from '../utils/gameRules.js';
+import { useCountUp } from '../utils/useCountUp.js';
 import { BountyClaimants, BountyTestHint } from './Scoreboard.jsx';
 import './Scoreboard.css';
 import './TeamScoreboard.css';
@@ -16,9 +18,26 @@ export function TeamScoreboard({
   players = [],
   bountyMaxPick = BOUNTY_MAX_PICK_COOP,
   showBountyForTesting = false,
+  animateScore = false,
+  teamPointsGain = 0,
   compact = false,
 }) {
-  const pct = winScore > 0 ? Math.min(100, Math.max(0, (teamScore / winScore) * 100)) : 0;
+  const startScore = animateScore ? Math.max(0, teamScore - teamPointsGain) : teamScore;
+  const [highlight, setHighlight] = useState(false);
+
+  useEffect(() => {
+    setHighlight(false);
+  }, [teamScore, animateScore]);
+
+  const displayedScore = useCountUp(teamScore, {
+    start: startScore,
+    enabled: animateScore,
+    onComplete: () => {
+      if (teamPointsGain > 0) setHighlight(true);
+    },
+  });
+  const pct =
+    winScore > 0 ? Math.min(100, Math.max(0, (displayedScore / winScore) * 100)) : 0;
 
   const bountyNote = (() => {
     if (bountyActive) {
@@ -75,14 +94,18 @@ export function TeamScoreboard({
 
   return (
     <div className={`scoreboard team-scoreboard${compact ? ' scoreboard--compact' : ''}`}>
-      <div className="scoreboard-row-top">
-        <span className="scoreboard-name">Team Score</span>
-        <span className="scoreboard-fraction">
-          {teamScore} / {winScore}
-        </span>
-      </div>
-      <div className="scoreboard-track" aria-hidden>
-        <div className="scoreboard-fill" style={{ width: `${pct}%` }} />
+      <div
+        className={`scoreboard-row team-scoreboard-row${highlight ? ' scoreboard-row--gain' : ''}`}
+      >
+        <div className="scoreboard-row-top">
+          <span className="scoreboard-name">Team Score</span>
+          <span className="scoreboard-fraction">
+            {displayedScore} / {winScore}
+          </span>
+        </div>
+        <div className="scoreboard-track" aria-hidden>
+          <div className="scoreboard-fill" style={{ width: `${pct}%` }} />
+        </div>
       </div>
       {bountyNote}
       <p className="team-scoreboard-note">{defaultNote}</p>

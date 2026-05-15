@@ -1,4 +1,4 @@
-import { useCallback, useReducer, useState } from 'react';
+import { useCallback, useEffect, useReducer, useState } from 'react';
 import './App.css';
 import { AppMenu } from './components/AppMenu.jsx';
 import { SetupScreen } from './components/SetupScreen.jsx';
@@ -118,7 +118,7 @@ const initialState = {
   currentPlayerIndex: 0,
   round: 1,
   phase: 'setup',
-  winnerId: null,
+  winnerIds: [],
   roundResult: null,
   pendingFinalOutcome: null,
 };
@@ -195,14 +195,16 @@ function gameReducer(state, action) {
         const bountyClaimedBy = roundResult.bountyHit
           ? roundResult.bountyWinners
           : state.bountyClaimedBy;
-        const winner = roundResult.players.find((player) => player.score >= WIN_SCORE);
-        if (winner) {
+        const winnerIds = roundResult.players
+          .filter((player) => player.score >= WIN_SCORE)
+          .map((player) => player.id);
+        if (winnerIds.length > 0) {
           return {
             ...state,
             players: roundResult.players,
             currentPlayerIndex: 0,
             phase: 'winner',
-            winnerId: winner.id,
+            winnerIds,
             roundResult,
             lightningTarget: state.lightningTarget,
             bountyClaimed,
@@ -248,7 +250,7 @@ function gameReducer(state, action) {
         phase: 'reveal',
         roundResult,
         pendingFinalOutcome,
-        winnerId: null,
+        winnerIds: [],
       };
     }
     case 'NEXT_ROUND': {
@@ -291,7 +293,7 @@ function gameReducer(state, action) {
         currentPlayerIndex: 0,
         round: 1,
         phase: 'input',
-        winnerId: null,
+        winnerIds: [],
         roundResult: null,
         pendingFinalOutcome: null,
       };
@@ -318,7 +320,7 @@ export default function App() {
     currentPlayerIndex,
     round,
     phase,
-    winnerId,
+    winnerIds,
     roundResult,
     pendingFinalOutcome,
   } = state;
@@ -371,14 +373,33 @@ export default function App() {
     });
   }, []);
 
-  const winner = winnerId ? players.find((p) => p.id === winnerId) : null;
-  const winnerThemeIndex = winner ? players.findIndex((p) => p.id === winner.id) : -1;
+  const winners = players.filter((player) => winnerIds.includes(player.id));
+  const competitiveWinners = winners.map((player) => ({
+    id: player.id,
+    name: player.name,
+    colorIndex: players.findIndex((p) => p.id === player.id) % 6,
+  }));
+  const winnerThemeIndex =
+    competitiveWinners.length === 1 ? competitiveWinners[0].colorIndex : -1;
 
   const showAppMenu = phase === 'setup' || players.length > 0;
   const showMatchMenuActions = phase !== 'setup' && players.length > 0;
   const showRoundBadge = phase !== 'setup' && phase !== 'winner' && phase !== 'loser';
+  const isSpecialRound = lightningRound || chaosRound || coopJackpotRound;
+  const [badgePulse, setBadgePulse] = useState(false);
+
+  useEffect(() => {
+    if (!showRoundBadge || !isSpecialRound) return undefined;
+    setBadgePulse(true);
+    const timer = window.setTimeout(() => setBadgePulse(false), 1400);
+    return () => clearTimeout(timer);
+  }, [round, isSpecialRound, showRoundBadge]);
   const turnThemeClass =
-    phase === 'input' && players.length > 0 ? ` app--turn--${currentPlayerIndex % 6}` : '';
+    phase === 'input' && players.length > 0
+      ? ` app--turn--${currentPlayerIndex % 6}`
+      : phase === 'winner' && isCompetitive && winnerThemeIndex >= 0
+        ? ` app--turn--${winnerThemeIndex % 6}`
+        : '';
   const appSub = 'Great minds think alike';
   const roundBadgeLabel = isCompetitive
     ? `Round ${round}${lightningRound ? ' · Lightning' : chaosRound ? ' · Chaos' : ''}`
@@ -386,7 +407,7 @@ export default function App() {
 
   return (
     <div
-      className={`app${phase === 'setup' ? ' app--setup' : ''}${phase === 'input' ? ' app--input-play' : ''}${turnThemeClass}`}
+      className={`app${phase === 'setup' ? ' app--setup' : ''}${phase === 'input' ? ' app--input-play' : ''}${phase === 'winner' && isCompetitive ? ' app--winner-play' : ''}${turnThemeClass}`}
     >
       <header
         className={`app-header${phase === 'input' ? ' app-header--tight' : ''}${showAppMenu ? ' app-header--has-menu' : ''}`}
@@ -406,7 +427,7 @@ export default function App() {
           <p className="app-sub">{appSub}</p>
           {showRoundBadge && (
             <span
-              className={`round-badge${chaosRound ? ' round-badge--chaos' : ''}${lightningRound ? ' round-badge--lightning' : ''}`}
+              className={`round-badge${chaosRound ? ' round-badge--chaos' : ''}${lightningRound ? ' round-badge--lightning' : ''}${coopJackpotRound ? ' round-badge--jackpot' : ''}${badgePulse ? ' round-badge--pulse' : ''}`}
             >
               {roundBadgeLabel}
             </span>
@@ -477,6 +498,8 @@ export default function App() {
                 bountyNumber={bountyNumber}
                 bountyMaxPick={bountyMaxPick}
                 showBountyForTesting={showBountyForTesting}
+                animateScore
+                roundDeltas={roundResult?.roundDeltas}
                 compact
               />
             ) : (
@@ -493,6 +516,8 @@ export default function App() {
                 players={players}
                 bountyMaxPick={bountyMaxPick}
                 showBountyForTesting={showBountyForTesting}
+                animateScore
+                teamPointsGain={roundResult?.teamPoints ?? 0}
                 compact
               />
             )}
@@ -512,26 +537,50 @@ export default function App() {
         </>
       )}
 
-      {phase === 'winner' && (!isCompetitive || winner) && (
-        <WinnerScreen
-          variant="win"
-          highlight={isCompetitive ? winner?.name : ''}
-          themeIndex={isCompetitive && winnerThemeIndex >= 0 ? winnerThemeIndex % 6 : undefined}
-          headline={isCompetitive ? 'Wins Think Alike!' : 'Perfect teamwork!'}
-          subtitle={
-            isCompetitive
-              ? `First to ${WIN_SCORE} points wins.`
-              : `You reached ${teamScore} / ${WIN_SCORE} in ${round} rounds.`
-          }
-          finalPlayers={isCompetitive ? players : undefined}
-          finalRoundResult={isCompetitive ? roundResult : undefined}
-          lightningRound={isCompetitive ? lightningRound : false}
-          chaosRound={isCompetitive ? chaosRound : false}
-          lightningTarget={isCompetitive ? lightningTarget : null}
-          roundHistory={!isCompetitive ? roundHistory : undefined}
-          onPlayAgain={playAgain}
-          onNewGame={newGame}
-        />
+      {phase === 'winner' && (!isCompetitive || winners.length > 0) && (
+        isCompetitive ? (
+          <div className="app-winner-flow">
+            <div className="app-live-scoreboard">
+              <Scoreboard
+                players={players}
+                winScore={WIN_SCORE}
+                bountyActive={bountyActive}
+                bountyClaimed={bountyClaimed}
+                bountyClaimedBy={bountyClaimedBy}
+                bountyNumber={bountyNumber}
+                bountyMaxPick={bountyMaxPick}
+                showBountyForTesting={showBountyForTesting}
+                highlightPlayerIds={winnerIds}
+                compact
+              />
+            </div>
+            <WinnerScreen
+              variant="win"
+              winners={competitiveWinners}
+              themeIndex={winnerThemeIndex >= 0 ? winnerThemeIndex : undefined}
+              headline={
+                competitiveWinners.length > 1 ? 'Win Think Alike!' : 'Wins Think Alike!'
+              }
+              subtitle={`First to ${WIN_SCORE} points wins.`}
+              finalPlayers={players}
+              finalRoundResult={roundResult}
+              lightningRound={lightningRound}
+              chaosRound={chaosRound}
+              lightningTarget={lightningTarget}
+              onPlayAgain={playAgain}
+              onNewGame={newGame}
+            />
+          </div>
+        ) : (
+          <WinnerScreen
+            variant="win"
+            headline="Perfect teamwork!"
+            subtitle={`You reached ${teamScore} / ${WIN_SCORE} in ${round} rounds.`}
+            roundHistory={roundHistory}
+            onPlayAgain={playAgain}
+            onNewGame={newGame}
+          />
+        )
       )}
 
       {phase === 'loser' && (

@@ -1,6 +1,57 @@
+.input-phase-shell {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.input-phase-shell .input-phase {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.38s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.32s ease;
+  will-change: transform, opacity;
+}
+
+.input-phase-shell .input-phase--play {
+  transform: translateX(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.input-phase-shell .input-phase--play.input-phase--inactive {
+  transform: translateX(-28%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.input-phase-shell .input-phase--pass {
+  transform: translateX(28%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.input-phase-shell--pass .input-phase--pass {
+  transform: translateX(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.input-phase-shell--pass .input-phase--play {
+  transform: translateX(-28%);
+  opacity: 0;
+}
+
 .input-phase {
   display: flex;
   flex-direction: column;
+}
+
+.input-phase-shell .input-phase--play {
+  gap: 0;
+  overflow: hidden;
+  --turn-accent: #6ec9ff;
 }
 
 .input-phase--play {
@@ -31,9 +82,38 @@
 }
 
 .input-phase--pass {
-  flex: 1;
-  min-height: 0;
   justify-content: center;
+}
+
+.input-pass-next {
+  margin: 0 0 0.65rem;
+  font-size: 1.05rem;
+  font-weight: 650;
+  color: var(--text);
+}
+
+.input-pass-next-name {
+  font-weight: 800;
+  color: var(--turn-accent);
+}
+
+.input-pass-next-name--color--0 {
+  --turn-accent: #6ec9ff;
+}
+.input-pass-next-name--color--1 {
+  --turn-accent: #f0c14a;
+}
+.input-pass-next-name--color--2 {
+  --turn-accent: #c4a8ff;
+}
+.input-pass-next-name--color--3 {
+  --turn-accent: #5ee9b8;
+}
+.input-pass-next-name--color--4 {
+  --turn-accent: #ff8fab;
+}
+.input-pass-next-name--color--5 {
+  --turn-accent: #9ab8ff;
 }
 
 .input-chaos-strip {

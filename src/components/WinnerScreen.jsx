@@ -1,8 +1,40 @@
 import { useMemo } from 'react';
+import { Confetti } from './Confetti.jsx';
 import './WinnerScreen.css';
+
+function WinnerNames({ winners }) {
+  if (!winners.length) return null;
+
+  return winners.map((winner, index) => {
+    const separator =
+      index === 0
+        ? null
+        : index === winners.length - 1
+          ? winners.length > 2
+            ? ', and '
+            : ' and '
+          : ', ';
+
+    return (
+      <span key={winner.id ?? winner.name}>
+        {separator}
+        <span
+          className={`winner-name${
+            winner.colorIndex != null
+              ? ` winner-name--color--${winner.colorIndex}`
+              : ''
+          }`}
+        >
+          {winner.name}
+        </span>
+      </span>
+    );
+  });
+}
 
 export function WinnerScreen({
   highlight = '',
+  winners = null,
   headline,
   subtitle,
   variant = 'win',
@@ -16,6 +48,12 @@ export function WinnerScreen({
   onPlayAgain,
   onNewGame,
 }) {
+  const displayWinners = useMemo(() => {
+    if (winners?.length) return winners;
+    if (highlight) return [{ id: highlight, name: highlight, colorIndex: themeIndex }];
+    return [];
+  }, [winners, highlight, themeIndex]);
+
   const finalResults = useMemo(() => {
     if (!finalPlayers?.length) return [];
 
@@ -53,16 +91,22 @@ export function WinnerScreen({
     });
   }, [finalPlayers, finalRoundResult, lightningRound, lightningTarget]);
 
+  const titleThemeIndex =
+    displayWinners.length === 1 && displayWinners[0].colorIndex != null
+      ? displayWinners[0].colorIndex
+      : themeIndex;
+
   return (
     <section
-      className={`winner winner--${variant}${variant === 'win' && themeIndex != null ? ` winner--theme--${themeIndex}` : ''} card-rise`}
+      className={`winner winner--${variant}${variant === 'win' && titleThemeIndex != null ? ` winner--theme--${titleThemeIndex}` : ''} card-rise`}
       aria-live="polite"
     >
+      {variant === 'win' ? <Confetti active /> : null}
       <div className="winner-glow" aria-hidden />
       <h2 className="winner-title">
-        {highlight ? (
+        {displayWinners.length > 0 ? (
           <>
-            <span className="winner-name">{highlight}</span> {headline}
+            <WinnerNames winners={displayWinners} /> {headline}
           </>
         ) : (
           headline

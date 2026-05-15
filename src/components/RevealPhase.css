@@ -5,11 +5,36 @@
   gap: 1rem;
 }
 
+.reveal-phase-head {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
 .reveal-title {
   margin: 0;
   font-size: 1.2rem;
   font-weight: 700;
   text-align: center;
+}
+
+.reveal-skip {
+  margin: 0;
+  padding: 0.2rem 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg-card);
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.reveal-skip:hover {
+  color: var(--text);
+  border-color: var(--accent);
 }
 
 .reveal-chaos-note {
@@ -56,37 +81,94 @@
   gap: 0.05rem;
   text-align: center;
   min-width: 0;
-  transition: transform var(--transition), border-color var(--transition);
-  animation: cardPop 0.4s ease backwards;
+  transition: transform var(--transition), border-color var(--transition), box-shadow var(--transition);
 }
 
-.reveal-card:nth-child(1) {
-  animation-delay: 0.02s;
-}
-.reveal-card:nth-child(2) {
-  animation-delay: 0.06s;
-}
-.reveal-card:nth-child(3) {
-  animation-delay: 0.1s;
-}
-.reveal-card:nth-child(4) {
-  animation-delay: 0.14s;
-}
-.reveal-card:nth-child(5) {
-  animation-delay: 0.18s;
-}
-.reveal-card:nth-child(6) {
-  animation-delay: 0.22s;
+.reveal-card--revealed {
+  border-color: color-mix(in srgb, var(--accent) 42%, var(--border));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 14%, transparent);
+  animation: revealCardFlip 0.42s ease;
 }
 
-@keyframes cardPop {
+@keyframes revealCardFlip {
+  0% {
+    transform: scale(0.94);
+  }
+  55% {
+    transform: scale(1.03);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.reveal-card-num-wrap {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 1.5rem;
+}
+
+.reveal-card-num--masked,
+.reveal-card-num:not(.reveal-card-num--shown) {
+  grid-area: 1 / 1;
+}
+
+.reveal-card-num--masked {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--text-muted);
+  opacity: 0.55;
+}
+
+.reveal-card-num--shown {
+  animation: revealNumPop 0.34s ease;
+}
+
+.reveal-card-num--masked[aria-hidden='true'],
+.reveal-card-num--shown[aria-hidden='true'] {
+  visibility: hidden;
+  opacity: 0;
+}
+
+@keyframes revealNumPop {
   from {
     opacity: 0;
-    transform: scale(0.92) translateY(8px);
+    transform: scale(0.6);
   }
   to {
     opacity: 1;
-    transform: scale(1) translateY(0);
+    transform: scale(1);
+  }
+}
+
+.reveal-card-delta--enter {
+  animation: revealDeltaIn 0.32s ease;
+}
+
+@keyframes revealDeltaIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.reveal-note-enter {
+  animation: revealNoteIn 0.35s ease;
+}
+
+@keyframes revealNoteIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
@@ -140,6 +222,18 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
+
+.reveal-messages--visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.reveal-messages--visible .reveal-callout-celebrate {
+  animation: celebrate 0.8s ease;
 }
 
 .reveal-coop-summary {
@@ -163,7 +257,6 @@
 .reveal-callout-celebrate {
   color: var(--success);
   text-shadow: 0 0 24px rgba(74, 222, 128, 0.35);
-  animation: celebrate 0.8s ease;
 }
 
 .reveal-team-points {

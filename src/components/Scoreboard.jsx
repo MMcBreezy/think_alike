@@ -1,4 +1,6 @@
+import { useEffect, useState } from 'react';
 import { BOUNTY_MAX_PICK, BOUNTY_POINTS } from '../utils/gameRules.js';
+import { useCountUp } from '../utils/useCountUp.js';
 import './Scoreboard.css';
 
 export function BountyTestHint({ bountyNumber, showBountyForTesting = false }) {
@@ -43,6 +45,53 @@ export function BountyClaimants({ claimants, players }) {
   });
 }
 
+function ScoreboardRow({
+  player,
+  winScore,
+  colorIndex,
+  roundDelta = 0,
+  animateScore = false,
+  isWinner = false,
+}) {
+  const startScore = animateScore ? Math.max(0, player.score - roundDelta) : player.score;
+  const [highlight, setHighlight] = useState(false);
+
+  useEffect(() => {
+    setHighlight(false);
+  }, [player.score, animateScore]);
+
+  const displayedScore = useCountUp(player.score, {
+    start: startScore,
+    enabled: animateScore,
+    onComplete: () => {
+      if (roundDelta > 0) setHighlight(true);
+    },
+  });
+  const pct =
+    winScore > 0 ? Math.min(100, Math.max(0, (displayedScore / winScore) * 100)) : 0;
+
+  return (
+    <li
+      className={`scoreboard-row${highlight ? ' scoreboard-row--gain' : ''}${isWinner ? ' scoreboard-row--winner' : ''}`}
+    >
+      <div className="scoreboard-row-top">
+        <span className={`scoreboard-name scoreboard-name--color--${colorIndex}`}>
+          {player.name}
+        </span>
+        <span className="scoreboard-fraction">
+          {displayedScore} / {winScore}
+        </span>
+      </div>
+      <div className="scoreboard-track" aria-hidden>
+        <div
+          className="scoreboard-fill"
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+    </li>
+  );
+}
+
 export function Scoreboard({
   players,
   winScore,
@@ -52,6 +101,9 @@ export function Scoreboard({
   bountyNumber = null,
   bountyMaxPick = BOUNTY_MAX_PICK,
   showBountyForTesting = false,
+  animateScore = false,
+  roundDeltas = null,
+  highlightPlayerIds = null,
   compact = false,
 }) {
   const bountyNote = (() => {
@@ -109,25 +161,18 @@ export function Scoreboard({
       {bountyNote}
       <ul className="scoreboard-list">
         {players.map((p) => {
-          const pct =
-            winScore > 0 ? Math.min(100, Math.max(0, (p.score / winScore) * 100)) : 0;
           const colorIndex = playerColorIndex(players, p.id);
+          const roundDelta = roundDeltas?.[p.id] ?? 0;
           return (
-            <li key={p.id} className="scoreboard-row">
-              <div className="scoreboard-row-top">
-                <span
-                  className={`scoreboard-name scoreboard-name--color--${colorIndex}`}
-                >
-                  {p.name}
-                </span>
-                <span className="scoreboard-fraction">
-                  {p.score} / {winScore}
-                </span>
-              </div>
-              <div className="scoreboard-track" aria-hidden>
-                <div className="scoreboard-fill" style={{ width: `${pct}%` }} />
-              </div>
-            </li>
+            <ScoreboardRow
+              key={p.id}
+              player={p}
+              winScore={winScore}
+              colorIndex={colorIndex}
+              roundDelta={roundDelta}
+              animateScore={animateScore}
+              isWinner={highlightPlayerIds?.includes(p.id)}
+            />
           );
         })}
       </ul>

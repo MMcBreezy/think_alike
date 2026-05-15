@@ -87,6 +87,35 @@
   gap: 0.85rem;
 }
 
+.scoreboard-row {
+  border-radius: calc(var(--radius-sm) - 2px);
+  transition: background 0.35s ease, box-shadow 0.35s ease;
+}
+
+.scoreboard-row--gain {
+  animation: scoreboardRowGain 0.85s ease;
+}
+
+.scoreboard-row--winner .scoreboard-name {
+  font-weight: 800;
+}
+
+.scoreboard-row--winner .scoreboard-fraction {
+  color: var(--success);
+  font-weight: 750;
+}
+
+@keyframes scoreboardRowGain {
+  0% {
+    background: color-mix(in srgb, var(--success) 22%, transparent);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--success) 35%, transparent);
+  }
+  100% {
+    background: transparent;
+    box-shadow: none;
+  }
+}
+
 .scoreboard-row-top {
   display: flex;
   justify-content: space-between;

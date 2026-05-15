@@ -30,11 +30,19 @@ export function InputPhase({
   const passBusyRef = useRef(false);
 
   const current = players[currentPlayerIndex];
+  const nextPlayer = players[currentPlayerIndex + 1];
   const isLastPlayer = currentPlayerIndex >= players.length - 1;
   const maxLen = useMemo(() => maxDigitsForPick(maxPick), [maxPick]);
+  const nextColorIndex = (currentPlayerIndex + 1) % 6;
 
   useEffect(() => {
     passBusyRef.current = false;
+  }, [currentPlayerIndex]);
+
+  useEffect(() => {
+    setPendingPass(false);
+    setDraft('');
+    setError('');
   }, [currentPlayerIndex]);
 
   const displayValue = useMemo(() => draft, [draft]);
@@ -51,7 +59,7 @@ export function InputPhase({
         return next;
       });
     },
-    [maxLen, maxPick]
+    [maxLen, maxPick],
   );
 
   const backspace = useCallback(() => {
@@ -88,22 +96,6 @@ export function InputPhase({
 
   if (!current) return null;
 
-  if (pendingPass) {
-    return (
-      <section className="input-phase input-phase--pass card-rise" aria-live="polite">
-        <div className="input-pass-card">
-          <p className="input-pass-title">Pass to the next player</p>
-          <p className="input-pass-sub">
-            Your number is stored and is not shown on this screen. Hand the device over, then continue.
-          </p>
-          <button type="button" className="btn btn-primary btn-block" onClick={continuePass}>
-            Next player ready
-          </button>
-        </div>
-      </section>
-    );
-  }
-
   const rangeHint = jackpotRound
     ? `Final Sync Jackpot · 1-${maxPick} · exact +${jackpotNeeded} · off by 1 +2 · off by 2-3 +1`
     : lightningRound
@@ -113,68 +105,96 @@ export function InputPhase({
         : `1-${maxPick} · visible only while you type`;
 
   return (
-    <section
-      className={`input-phase input-phase--play input-turn--${currentPlayerIndex % 6} card-rise`}
-      aria-labelledby="input-heading"
-      data-secret-entry
+    <div
+      className={`input-phase-shell${pendingPass ? ' input-phase-shell--pass' : ''}`}
     >
-      <div className="input-phase-top">
-        {jackpotRound ? (
-          <p className="input-jackpot-strip" role="status">
-            Final Sync Jackpot - pick from 1 to {maxPick}. Exact sync wins +{jackpotNeeded}.
-          </p>
-        ) : lightningRound ? (
-          <p className="input-lightning-strip" role="status">
-            Lightning round - guess the computer&apos;s number from 1 to {maxPick}
-          </p>
-        ) : chaosRound ? (
-          <p className="input-chaos-strip" role="status">
-            Chaos round - pick a number from 1 to {maxPick} for double points
-          </p>
-        ) : null}
+      <section
+        className={`input-phase input-phase--play input-turn--${currentPlayerIndex % 6}${pendingPass ? ' input-phase--inactive' : ''}`}
+        aria-labelledby="input-heading"
+        aria-hidden={pendingPass}
+        data-secret-entry
+      >
+        <div className="input-phase-top">
+          {jackpotRound ? (
+            <p className="input-jackpot-strip" role="status">
+              Final Sync Jackpot - pick from 1 to {maxPick}. Exact sync wins +{jackpotNeeded}.
+            </p>
+          ) : lightningRound ? (
+            <p className="input-lightning-strip" role="status">
+              Lightning round - guess the computer&apos;s number from 1 to {maxPick}
+            </p>
+          ) : chaosRound ? (
+            <p className="input-chaos-strip" role="status">
+              Chaos round - pick a number from 1 to {maxPick} for double points
+            </p>
+          ) : null}
 
-        <h2 id="input-heading" className="input-heading">
-          <span className="input-player-name">{current.name}</span>
-          <span className="input-heading-rest">, enter your secret number</span>
-        </h2>
+          <h2 id="input-heading" className="input-heading">
+            <span className="input-player-name">{current.name}</span>
+            <span className="input-heading-rest">, enter your secret number</span>
+          </h2>
 
-        <div className="input-display" aria-live="polite" aria-atomic="true">
-          <span className={displayValue ? 'input-display-value' : 'input-display-placeholder'}>
-            {displayValue || '—'}
-          </span>
+          <div className="input-display" aria-live="polite" aria-atomic="true">
+            <span className={displayValue ? 'input-display-value' : 'input-display-placeholder'}>
+              {displayValue || '—'}
+            </span>
+          </div>
+
+          {error ? (
+            <p className="input-error" role="alert">
+              {error}
+            </p>
+          ) : (
+            <p className="input-hint input-hint--turn">{rangeHint}</p>
+          )}
         </div>
 
-        {error ? (
-          <p className="input-error" role="alert">
-            {error}
-          </p>
-        ) : (
-          <p className="input-hint input-hint--turn">{rangeHint}</p>
-        )}
-      </div>
-
-      <div className="input-phase-bottom">
-        <div className="keypad" role="group" aria-label="Number keypad">
-          {['1', '2', '3', '4', '5', '6', '7', '8', '9'].map((d) => (
-            <button key={d} type="button" className="keypad-key" onClick={() => appendDigit(d)}>
-              {d}
+        <div className="input-phase-bottom">
+          <div className="keypad" role="group" aria-label="Number keypad">
+            {['1', '2', '3', '4', '5', '6', '7', '8', '9'].map((d) => (
+              <button key={d} type="button" className="keypad-key" onClick={() => appendDigit(d)}>
+                {d}
+              </button>
+            ))}
+            <button type="button" className="keypad-key" onClick={clear}>
+              Clear
             </button>
-          ))}
-          <button type="button" className="keypad-key" onClick={clear}>
-            Clear
-          </button>
-          <button type="button" className="keypad-key" onClick={() => appendDigit('0')}>
-            0
-          </button>
-          <button type="button" className="keypad-key" onClick={backspace}>
-            ⌫
+            <button type="button" className="keypad-key" onClick={() => appendDigit('0')}>
+              0
+            </button>
+            <button type="button" className="keypad-key" onClick={backspace}>
+              ⌫
+            </button>
+          </div>
+          <button type="button" className="btn btn-primary btn-block input-submit" onClick={submit}>
+            Submit number
           </button>
         </div>
+      </section>
 
-        <button type="button" className="btn btn-primary btn-block input-submit" onClick={submit}>
-          Submit number
-        </button>
-      </div>
-    </section>
+      <section
+        className={`input-phase input-phase--pass input-turn--${nextColorIndex}${pendingPass ? ' input-phase--active' : ''}`}
+        aria-live="polite"
+        aria-hidden={!pendingPass}
+      >
+        <div className="input-pass-card">
+          <p className="input-pass-title">Pass the device</p>
+          {nextPlayer ? (
+            <p className="input-pass-next">
+              Next up:{' '}
+              <span className={`input-pass-next-name input-pass-next-name--color--${nextColorIndex}`}>
+                {nextPlayer.name}
+              </span>
+            </p>
+          ) : null}
+          <p className="input-pass-sub">
+            Your number is stored and hidden. Hand the device over, then continue.
+          </p>
+          <button type="button" className="btn btn-primary btn-block" onClick={continuePass}>
+            {nextPlayer ? `${nextPlayer.name} is ready` : 'Next player ready'}
+          </button>
+        </div>
+      </section>
+    </div>
   );
 }

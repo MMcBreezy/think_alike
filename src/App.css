@@ -97,12 +97,28 @@
   --accent-dim: #577fd4;
 }
 
-.app-input-flow {
+.app-input-flow,
+.app-winner-flow {
   flex: 1;
   display: flex;
   flex-direction: column;
   min-height: 0;
   gap: 0.45rem;
+}
+
+.app-winner-flow .app-live-scoreboard {
+  margin-bottom: 0;
+}
+
+.app-winner-flow .winner {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.app--winner-play {
+  padding-bottom: max(10px, env(safe-area-inset-bottom));
 }
 
 .app-header--tight {
@@ -237,6 +253,46 @@
   box-shadow: 0 0 0 1px rgba(124, 140, 255, 0.14);
 }
 
+.round-badge--jackpot {
+  color: #e8e4ff;
+  border-color: rgba(122, 92, 255, 0.5);
+  background: rgba(122, 92, 255, 0.16);
+  box-shadow: 0 0 0 1px rgba(122, 92, 255, 0.18);
+}
+
+.round-badge--pulse {
+  animation: roundBadgePulse 1.35s ease;
+}
+
+@keyframes roundBadgePulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+  }
+  35% {
+    transform: scale(1.06);
+  }
+  55% {
+    box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.06);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+  }
+}
+
+.round-badge--chaos.round-badge--pulse {
+  box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.14), 0 0 18px rgba(251, 191, 36, 0.22);
+}
+
+.round-badge--lightning.round-badge--pulse {
+  box-shadow: 0 0 0 1px rgba(124, 140, 255, 0.14), 0 0 18px rgba(124, 140, 255, 0.28);
+}
+
+.round-badge--jackpot.round-badge--pulse {
+  box-shadow: 0 0 0 1px rgba(122, 92, 255, 0.18), 0 0 18px rgba(64, 192, 207, 0.24);
+}
+
 .card-rise {
   animation: cardRise 0.35s ease;
 }
@@ -361,6 +417,35 @@
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card-rise,
+  .reveal-card--revealed,
+  .reveal-card-num--shown,
+  .reveal-card-delta--enter,
+  .reveal-note-enter,
+  .reveal-messages,
+  .reveal-callout-celebrate,
+  .scoreboard-row--gain,
+  .round-badge--pulse,
+  .input-phase-shell .input-phase {
+    animation: none !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .reveal-messages {
+    opacity: 1;
+    transform: none;
+  }
+
+  .input-phase-shell .input-phase--play,
+  .input-phase-shell .input-phase--pass,
+  .input-phase-shell--pass .input-phase--play,
+  .input-phase-shell--pass .input-phase--pass {
+    transform: none;
+    opacity: 1;
   }
 }
 

@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { BountyClaimants } from './Scoreboard.jsx';
 import {
   BOUNTY_POINTS,
@@ -14,7 +14,11 @@ import {
   MAX_PICK_CHAOS,
   MAX_PICK_LIGHTNING,
 } from '../utils/gameRules.js';
+import { usePrefersReducedMotion } from '../utils/usePrefersReducedMotion.js';
 import './RevealPhase.css';
+
+const REVEAL_STEP_MS = 380;
+const CALLOUT_DELAY_MS = 220;
 
 export function RevealPhase({
   players,
@@ -28,11 +32,11 @@ export function RevealPhase({
   nextLabel = 'Next round',
   onNextRound,
 }) {
+  const reducedMotion = usePrefersReducedMotion();
   const sorted = useMemo(
     () =>
       [...players].sort((a, b) => {
-        if (a.currentGuess !== b.currentGuess)
-          return a.currentGuess - b.currentGuess;
+        if (a.currentGuess !== b.currentGuess) return a.currentGuess - b.currentGuess;
         return a.name.localeCompare(b.name);
       }),
     [players],
@@ -41,12 +45,122 @@ export function RevealPhase({
   const isCompetitive = gameMode === GAME_MODES.COMPETITIVE;
   const feedback = roundResult?.feedback ?? null;
   const teamPoints = roundResult?.teamPoints ?? 0;
+  const revealKey = useMemo(
+    () => sorted.map((player) => `${player.id}:${player.currentGuess}`).join('|'),
+    [sorted],
+  );
+
+  const [revealedCount, setRevealedCount] = useState(() =>
+    reducedMotion ? sorted.length : 0,
+  );
+  const [showCallout, setShowCallout] = useState(reducedMotion);
+
+  const revealComplete = revealedCount >= sorted.length && showCallout;
+
+  const skipReveal = useCallback(() => {
+    setRevealedCount(sorted.length);
+    setShowCallout(true);
+  }, [sorted.length]);
+
+  useEffect(() => {
+    if (reducedMotion) {
+      setRevealedCount(sorted.length);
+      setShowCallout(true);
+      return undefined;
+    }
+
+    setRevealedCount(0);
+    setShowCallout(false);
+
+    if (sorted.length === 0) {
+      const calloutTimer = window.setTimeout(() => setShowCallout(true), CALLOUT_DELAY_MS);
+      return () => clearTimeout(calloutTimer);
+    }
+
+    let cardIndex = 0;
+    let calloutTimer = 0;
+    const cardTimer = window.setInterval(() => {
+      cardIndex += 1;
+      setRevealedCount(cardIndex);
+      if (cardIndex >= sorted.length) {
+        window.clearInterval(cardTimer);
+        calloutTimer = window.setTimeout(() => setShowCallout(true), CALLOUT_DELAY_MS);
+      }
+    }, REVEAL_STEP_MS);
+
+    return () => {
+      window.clearInterval(cardTimer);
+      if (calloutTimer) window.clearTimeout(calloutTimer);
+    };
+  }, [revealKey, sorted.length, reducedMotion]);
+
+  const calloutContent = (() => {
+    if (isCompetitive && !lightningRound && feedback === 'no-match') {
+      return <p className="reveal-callout reveal-callout-muted">No Match!</p>;
+    }
+    if (isCompetitive && !lightningRound && feedback === 'perfect') {
+      return (
+        <p className="reveal-callout reveal-callout-celebrate">Perfect Match!</p>
+      );
+    }
+    if (isCompetitive && lightningRound && feedback === 'lightning-hit') {
+      return <p className="reveal-callout reveal-callout-celebrate">Bullseye!</p>;
+    }
+    if (isCompetitive && lightningRound && feedback === 'lightning-close') {
+      return <p className="reveal-callout reveal-callout-celebrate">Close Calls!</p>;
+    }
+    if (isCompetitive && lightningRound && feedback === 'lightning-miss') {
+      return <p className="reveal-callout reveal-callout-muted">No Lightning Hits</p>;
+    }
+    if (!isCompetitive) {
+      return (
+        <div className="reveal-coop-summary">
+          <p
+            className={`reveal-callout ${
+              feedback === 'perfect-sync' ||
+              feedback === 'close-sync' ||
+              feedback === 'jackpot-sync' ||
+              feedback === 'lightning-hit' ||
+              feedback === 'lightning-close'
+                ? 'reveal-callout-celebrate'
+                : 'reveal-callout-muted'
+            }`}
+          >
+            {feedback === 'perfect-sync' && 'Perfect Sync!'}
+            {feedback === 'close-sync' && 'Close Sync!'}
+            {feedback === 'jackpot-sync' && 'Final Sync Jackpot!'}
+            {feedback === 'jackpot-near' && 'So close!'}
+            {feedback === 'jackpot-close' && 'Almost there'}
+            {feedback === 'jackpot-miss' && 'Jackpot missed'}
+            {feedback === 'lightning-hit' && 'Bullseye!'}
+            {feedback === 'lightning-close' && 'Close Calls!'}
+            {feedback === 'lightning-miss' && 'No Lightning Hits'}
+            {feedback === 'no-sync' && 'No Sync this round'}
+          </p>
+          <p className={`reveal-team-points ${teamPoints > 0 ? 'is-pos' : 'is-zero'}`}>
+            {teamPoints > 0
+              ? `+${teamPoints} team point${teamPoints === 1 ? '' : 's'}`
+              : '+0 team points'}
+          </p>
+        </div>
+      );
+    }
+    return null;
+  })();
 
   return (
     <section className="reveal-phase card-rise" aria-labelledby="reveal-title">
-      <h2 id="reveal-title" className="reveal-title">
-        The reveal
-      </h2>
+      <div className="reveal-phase-head">
+        <h2 id="reveal-title" className="reveal-title">
+          The reveal
+        </h2>
+        {!revealComplete && !reducedMotion ? (
+          <button type="button" className="reveal-skip" onClick={skipReveal}>
+            Skip
+          </button>
+        ) : null}
+      </div>
+
       {jackpotRound ? (
         <p className="reveal-chaos-note reveal-jackpot-note">
           Final Sync Jackpot - picks were 1-
@@ -65,8 +179,11 @@ export function RevealPhase({
           Chaos round - picks were 1-{MAX_PICK_CHAOS} and this round was worth double points.
         </p>
       ) : null}
-      {roundResult?.bountyHit && Number.isInteger(roundResult.bountyNumber) && (
-        <p className="reveal-chaos-note reveal-bounty-note">
+
+      {showCallout &&
+      roundResult?.bountyHit &&
+      Number.isInteger(roundResult.bountyNumber) ? (
+        <p className="reveal-chaos-note reveal-bounty-note reveal-note-enter">
           Bounty claimed! The number was {roundResult.bountyNumber}.{' '}
           {roundResult.bountyWinners?.length ? (
             isCompetitive ? (
@@ -81,13 +198,14 @@ export function RevealPhase({
             )
           ) : null}
         </p>
-      )}
+      ) : null}
 
       <ul
         className={`reveal-grid${isCompetitive ? ' reveal-grid--competitive' : ''}`}
         style={isCompetitive ? { '--reveal-player-count': sorted.length } : undefined}
       >
         {sorted.map((p, index) => {
+          const isRevealed = index < revealedCount;
           const roundDelta = roundResult?.roundDeltas?.[p.id] ?? 0;
           const lightningTargetValue =
             lightningTarget ?? roundResult?.lightningTarget ?? null;
@@ -103,25 +221,34 @@ export function RevealPhase({
                 : 0;
 
           return (
-            <li key={p.id} className="reveal-card">
+            <li
+              key={p.id}
+              className={`reveal-card${isRevealed ? ' reveal-card--revealed' : ''}`}
+            >
               <span
                 className={`reveal-card-name reveal-card-name--color--${index % 6}`}
               >
                 {p.name}
               </span>
 
-              <span className="reveal-card-num">{p.currentGuess}</span>
+              <span className="reveal-card-num-wrap">
+                {isRevealed ? (
+                  <span className="reveal-card-num reveal-card-num--shown">{p.currentGuess}</span>
+                ) : (
+                  <span className="reveal-card-num reveal-card-num--masked">?</span>
+                )}
+              </span>
 
-              {isCompetitive && (
+              {isRevealed && isCompetitive ? (
                 <span
-                  className={`reveal-card-delta ${roundDelta > 0 ? 'is-pos' : 'is-zero'}`}
+                  className={`reveal-card-delta reveal-card-delta--enter ${roundDelta > 0 ? 'is-pos' : 'is-zero'}`}
                 >
                   {roundDelta > 0 ? `+${roundDelta} this round` : '+0 this round'}
                 </span>
-              )}
-              {!isCompetitive && lightningRound && (
+              ) : null}
+              {isRevealed && !isCompetitive && lightningRound ? (
                 <span
-                  className={`reveal-card-delta ${lightningPoints > 0 ? 'is-pos' : 'is-zero'}`}
+                  className={`reveal-card-delta reveal-card-delta--enter ${lightningPoints > 0 ? 'is-pos' : 'is-zero'}`}
                 >
                   {lightningDistance === 0
                     ? 'Exact hit'
@@ -129,67 +256,25 @@ export function RevealPhase({
                       ? `Off by ${lightningDistance}`
                       : '+0 this round'}
                 </span>
-              )}
+              ) : null}
             </li>
           );
         })}
       </ul>
 
-      <div className="reveal-messages" role="status">
-        {isCompetitive && !lightningRound && feedback === 'no-match' && (
-          <p className="reveal-callout reveal-callout-muted">No Match!</p>
-        )}
-        {isCompetitive && !lightningRound && feedback === 'perfect' && (
-          <p className="reveal-callout reveal-callout-celebrate">
-            Perfect Match!
-          </p>
-        )}
-        {isCompetitive && lightningRound && feedback === 'lightning-hit' && (
-          <p className="reveal-callout reveal-callout-celebrate">Bullseye!</p>
-        )}
-        {isCompetitive && lightningRound && feedback === 'lightning-close' && (
-          <p className="reveal-callout reveal-callout-celebrate">Close Calls!</p>
-        )}
-        {isCompetitive && lightningRound && feedback === 'lightning-miss' && (
-          <p className="reveal-callout reveal-callout-muted">No Lightning Hits</p>
-        )}
-        {!isCompetitive && (
-          <div className="reveal-coop-summary">
-            <p
-              className={`reveal-callout ${
-                feedback === 'perfect-sync' ||
-                feedback === 'close-sync' ||
-                feedback === 'jackpot-sync' ||
-                feedback === 'lightning-hit' ||
-                feedback === 'lightning-close'
-                  ? 'reveal-callout-celebrate'
-                  : 'reveal-callout-muted'
-              }`}
-            >
-              {feedback === 'perfect-sync' && 'Perfect Sync!'}
-              {feedback === 'close-sync' && 'Close Sync!'}
-              {feedback === 'jackpot-sync' && 'Final Sync Jackpot!'}
-              {feedback === 'jackpot-near' && 'So close!'}
-              {feedback === 'jackpot-close' && 'Almost there'}
-              {feedback === 'jackpot-miss' && 'Jackpot missed'}
-              {feedback === 'lightning-hit' && 'Bullseye!'}
-              {feedback === 'lightning-close' && 'Close Calls!'}
-              {feedback === 'lightning-miss' && 'No Lightning Hits'}
-              {feedback === 'no-sync' && 'No Sync this round'}
-            </p>
-            <p className={`reveal-team-points ${teamPoints > 0 ? 'is-pos' : 'is-zero'}`}>
-              {teamPoints > 0
-                ? `+${teamPoints} team point${teamPoints === 1 ? '' : 's'}`
-                : '+0 team points'}
-            </p>
-          </div>
-        )}
+      <div
+        className={`reveal-messages${showCallout ? ' reveal-messages--visible' : ''}`}
+        role="status"
+        aria-hidden={!showCallout}
+      >
+        {showCallout ? calloutContent : null}
       </div>
 
       <button
         type="button"
         className="btn btn-primary btn-block reveal-next"
         onClick={onNextRound}
+        disabled={!revealComplete}
       >
         {nextLabel}
       </button>

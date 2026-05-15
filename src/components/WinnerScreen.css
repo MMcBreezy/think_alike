@@ -45,6 +45,25 @@
   color: var(--winner-accent);
 }
 
+.winner-name--color--0 {
+  color: #6ec9ff;
+}
+.winner-name--color--1 {
+  color: #f0c14a;
+}
+.winner-name--color--2 {
+  color: #c4a8ff;
+}
+.winner-name--color--3 {
+  color: #5ee9b8;
+}
+.winner-name--color--4 {
+  color: #ff8fab;
+}
+.winner-name--color--5 {
+  color: #9ab8ff;
+}
+
 .winner--win .winner-title {
   color: color-mix(in srgb, var(--winner-accent) 28%, var(--text));
 }
